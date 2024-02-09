@@ -1,0 +1,36 @@
+from Enums.SideEnum import SideEnum as Side
+from Pieces.IPiece import IPiece
+from Pieces.Queen import Queen
+from Pieces.Bishop import Bishop
+from Pieces.King import King
+from Pieces.Knight import Knight
+from Pieces.Rook import Rook
+from Pieces.Pawn import Pawn
+
+
+class ChessEngine:
+
+    def __init__(self) -> None:
+        self.__SideToPlay = Side.WHITE
+        self.__MoveHistory = []
+        self.turnCount = 0
+        self.board = []
+        self.checkmated = False
+        self.board = self.__InitBoard()
+
+    def __InitBoard(self) -> list[IPiece]:
+        board = [
+            Rook(Side.BLACK), Knight(Side.BLACK), Bishop(Side.BLACK), Queen(Side.BLACK),
+            King(Side.BLACK), Bishop(Side.BLACK), Knight(Side.BLACK), Rook(Side.BLACK),
+            Pawn(Side.BLACK), Pawn(Side.BLACK), Pawn(Side.BLACK), Pawn(Side.BLACK),
+            Pawn(Side.BLACK), Pawn(Side.BLACK), Pawn(Side.BLACK), Pawn(Side.BLACK),
+            None, None, None, None, None, None, None, None,
+            None, None, None, None, None, None, None, None,
+            None, None, None, None, None, None, None, None,
+            None, None, None, None, None, None, None, None,
+            Pawn(Side.WHITE), Pawn(Side.WHITE), Pawn(Side.WHITE), Pawn(Side.WHITE),
+            Pawn(Side.WHITE), Pawn(Side.WHITE), Pawn(Side.WHITE), Pawn(Side.WHITE),
+            Rook(Side.WHITE), Knight(Side.WHITE), Bishop(Side.WHITE), Queen(Side.WHITE),
+            King(Side.WHITE), Bishop(Side.WHITE), Knight(Side.WHITE), Rook(Side.WHITE)
+        ]
+        return board
