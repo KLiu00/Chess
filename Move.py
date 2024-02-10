@@ -1,4 +1,4 @@
-from Pieces.IPiece import IPiece
+from Pieces.BasePiece import IPiece
 
 class Move:
 
