@@ -1,4 +1,4 @@
-from IPiece import IPiece
+from Pieces.BasePiece import IPiece
 from Enums.SideEnum import SideEnum
 from Enums.PieceEnum import PieceEnum
 
