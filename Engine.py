@@ -1,5 +1,6 @@
 from Enums.SideEnum import SideEnum as Side
-from Pieces.IPiece import IPiece
+from Enums.PieceEnum import PieceEnum
+from Pieces.BasePiece import IPiece
 from Pieces.Queen import Queen
 from Pieces.Bishop import Bishop
 from Pieces.King import King
@@ -18,6 +19,7 @@ class ChessEngine:
         self.checkmated = False
         self.board = self.__InitBoard()
 
+    # Returns a fresh board
     def __InitBoard(self) -> list[IPiece]:
         board = [
             Rook(Side.BLACK), Knight(Side.BLACK), Bishop(Side.BLACK), Queen(Side.BLACK),
@@ -34,3 +36,13 @@ class ChessEngine:
             King(Side.WHITE), Bishop(Side.WHITE), Knight(Side.WHITE), Rook(Side.WHITE)
         ]
         return board
+
+    # Returns a list of the requested pieces and the respective index on the board 
+    def getPieces(self, pieceType: PieceEnum, side: Side) -> list[tuple[IPiece, int]]:
+        pieces: list[tuple[IPiece, int]] = []
+        for i,cell in enumerate(self.board):
+            if cell is None: 
+                continue
+            if (cell.pieceType == pieceType) and (cell.side == side):
+                pieces.append((cell, i))
+        return pieces
