@@ -10,4 +10,4 @@ class IPiece:
         self.hasMoved: bool = False
 
     def __str__(self) -> str:
-        return f'{self.side.name}{self.pieceType.name}'
+        return f'{self.side.name[0].lower()}{self.pieceType.name[0]}'
