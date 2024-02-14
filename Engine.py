@@ -36,7 +36,7 @@ class ChessEngine:
             King(Side.WHITE), Bishop(Side.WHITE), Knight(Side.WHITE), Rook(Side.WHITE)
         ]
         return board
-
+    
     # Returns a list of the requested pieces and the respective index on the board 
     def getPieces(self, pieceType: PieceEnum, side: Side) -> list[tuple[IPiece, int]]:
         pieces: list[tuple[IPiece, int]] = []
@@ -46,3 +46,13 @@ class ChessEngine:
             if (cell.pieceType == pieceType) and (cell.side == side):
                 pieces.append((cell, i))
         return pieces
+    
+    def displayBoard(self) -> str:
+
+        display = ""
+        for i, cell in enumerate(self.board):
+            if i % 8 == 0:
+                display += "\n"
+            display += f"{ '--' if cell is None else str(cell)} "
+
+        return display
