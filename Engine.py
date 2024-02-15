@@ -1,5 +1,6 @@
 from Enums.SideEnum import SideEnum as Side
 from Enums.PieceEnum import PieceEnum
+from Move import Move
 from Pieces.BasePiece import IPiece
 from Pieces.Queen import Queen
 from Pieces.Bishop import Bishop
@@ -48,7 +49,6 @@ class ChessEngine:
         return pieces
     
     def displayBoard(self) -> str:
-
         display = ""
         for i, cell in enumerate(self.board):
             if i % 8 == 0:
@@ -56,3 +56,30 @@ class ChessEngine:
             display += f"{ '--' if cell is None else str(cell)} "
 
         return display
+    
+    def switchSide(self) -> None:
+        self.__SideToPlay = Side.WHITE if self.__SideToPlay == Side.BLACK else Side.BLACK
+
+    # Makes a move on the board and returns whether the operation failed or succeeded.
+    def makeMove(self, initialIndex: int, finalIndex: int) -> bool:
+        initialCell = self.board[initialIndex]
+        finalCell = self.board[finalIndex]
+        takingPiece = False if finalCell is None else True
+
+        # Selected nothing to move
+        if initialCell is None:
+            return False
+        # Attempting to take self piece
+        if takingPiece and initialCell.side == finalCell.side:
+            return False
+
+        self.board[initialIndex] = None
+        self.board[finalIndex] = initialCell
+
+        # Add move onto the move history.
+        self.__MoveHistory.append(Move(initialIndex, finalIndex, initialCell, finalCell))
+
+        # Switch playing sides
+        self.switchSide()
+
+        return True
