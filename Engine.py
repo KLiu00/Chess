@@ -1,6 +1,8 @@
 from Enums.SideEnum import SideEnum as Side
 from Enums.PieceEnum import PieceEnum
 from Move import Move
+from Stack import Stack
+
 from Pieces.BasePiece import IPiece
 from Pieces.Queen import Queen
 from Pieces.Bishop import Bishop
@@ -14,7 +16,7 @@ class ChessEngine:
 
     def __init__(self) -> None:
         self.__SideToPlay = Side.WHITE
-        self.__MoveHistory = []
+        self.__MoveHistory = Stack()
         self.turnCount = 0
         self.board = []
         self.checkmated = False
@@ -77,9 +79,17 @@ class ChessEngine:
         self.board[finalIndex] = initialCell
 
         # Add move onto the move history.
-        self.__MoveHistory.append(Move(initialIndex, finalIndex, initialCell, finalCell))
+        self.__MoveHistory.push(Move(initialIndex, finalIndex, initialCell, finalCell))
 
         # Switch playing sides
         self.switchSide()
 
         return True
+    
+    def unmakeMove(self) -> bool:
+        # Check if move history is empty
+        if len(self.__MoveHistory) == 0:
+            return False
+        
+        previousMove = self.__MoveHistory
+        
