@@ -102,11 +102,19 @@ class ChessEngine:
         self.switchSide()
 
         return True
-    
+
     def unmakeMove(self) -> bool:
         # Check if move history is empty
-        if len(self.__MoveHistory) == 0:
+        if self.__MoveHistory.isEmpty():
             return False
-        
-        previousMove = self.__MoveHistory
-        
+
+        # Gets the most recent move
+        previousMove = self.__MoveHistory.top()
+
+        self.board[previousMove.startPosition] = previousMove.pieceMoved
+        self.board[previousMove.endPosition] = previousMove.capturedPiece
+
+        # Removes the unmade move
+        self.__MoveHistory.pop()
+
+        return True
