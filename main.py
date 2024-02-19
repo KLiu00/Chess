@@ -8,8 +8,18 @@ def indexToRF(index: int ) -> str:
 
 if __name__ == '__main__':
     instance = Chess()
-    print(instance.displayBoard())
-    print(instance.getPieces(PieceEnum.BISHOP, SideEnum.WHITE))
-    instance.makeMove(1,16)
-    print(instance.displayBoard())
+    while not instance.checkmated:
+        print(instance.displayBoard())
+        all_moves = instance.generate_all_moves()
+        for boardIndex, move_set in all_moves:
+            for move in move_set:
+                print(f"{indexToRF(boardIndex)}{indexToRF(move)}", end=" ")
+                
+        fromMake = int(input("From: "))
+        toMake = int(input("to: "))
 
+        if fromMake == -1 or toMake == -1:
+            instance.unmakeMove()
+            continue
+
+        instance.makeMove(fromMake, toMake)
