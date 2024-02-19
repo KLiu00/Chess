@@ -15,13 +15,17 @@ from Pieces.Pawn import Pawn
 class ChessEngine:
 
     def __init__(self) -> None:
-        self.__SideToPlay = Side.WHITE
+        self.__SideToPlay: Side = Side.WHITE
         self.__MoveHistory = Stack()
         self.turnCount = 0
         self.board = []
         self.checkmated = False
         self.board = self.__InitBoard()
 
+        # Board movement directions in one dimensional array.
+        self.__HorizontalMovement = [-1, 1]
+        self.__VerticalMovement = [-8, 8]
+        self.__DiagonalMovement = [-7, -9, 7, 9]
     # Returns a fresh board
     def __InitBoard(self) -> list[IPiece]:
         board = [
