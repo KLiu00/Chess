@@ -96,6 +96,7 @@ class ChessEngine:
 
         # Add move onto the move history.
         self.__MoveHistory.push(Move(initialIndex, finalIndex, initialCell, finalCell))
+        self.board[initialIndex].hasMoved = True
 
         # Switch playing sides
         self.switchSide()
