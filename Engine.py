@@ -55,9 +55,9 @@ class ChessEngine:
             None, None, None, None, None, None, None, None,
         ]
         return board
-    
-    # Returns a list of the requested pieces and the respective index on the board 
-    def getPieces(self, pieceType: PieceEnum, side: Side) -> list[tuple[IPiece, int]]:
+
+    # Returns a list of the requested pieces and the respective index on the board
+    def getPieces(self, pieceType: PieceType, side: Side) -> list[tuple[IPiece, int]]:
         pieces: list[tuple[IPiece, int]] = []
         for i,cell in enumerate(self.board):
             if cell is None: 
@@ -65,7 +65,7 @@ class ChessEngine:
             if (cell.pieceType == pieceType) and (cell.side == side):
                 pieces.append((cell, i))
         return pieces
-    
+
     def displayBoard(self) -> str:
         display = ""
         for i, cell in enumerate(self.board):
@@ -74,7 +74,7 @@ class ChessEngine:
             display += f"{ '--' if cell is None else str(cell)} "
 
         return display
-    
+
     def switchSide(self) -> None:
         self.__SideToPlay = Side.WHITE if self.__SideToPlay == Side.BLACK else Side.BLACK
 
