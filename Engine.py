@@ -118,3 +118,34 @@ class ChessEngine:
         self.__MoveHistory.pop()
 
         return True
+
+    def raycast(self, boardIndex: int, direction: int, includeAllies:bool = False, includeContact:bool = True, xrayDepth: int = 0) -> list[int]:
+        currentIndex = boardIndex
+        locations = []
+        while True:
+            currentIndexInRow = currentIndex % 8
+            currentIndexInColumn = currentIndex // 8
+            nextIndex = currentIndex + direction
+            # Check if out of board
+            if not 0 <= nextIndex <= 63:
+                break
+
+            nextIndexInRow = nextIndex % 8
+            nextIndexInColumn = nextIndex // 8
+
+            # Checks if it "jumps" rows or columns
+            if abs(nextIndexInRow - currentIndexInRow) > 1 or abs(nextIndexInColumn - currentIndexInColumn) > 1:
+                break
+
+            # Checks if next cell contains a piece
+            nextCell = self.board[nextIndex]
+            if nextCell is not None:
+                # Checks if the cell is same team
+                if not includeAllies and nextCell.side == self.__SideToPlay:
+                    break
+                locations.append(nextIndex)
+                break
+
+            locations.append(nextIndex)
+            currentIndex = nextIndex
+        return locations
