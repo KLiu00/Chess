@@ -26,7 +26,7 @@ class Stack:
             item.next_node = self.head
             self.head = item
 
-    def pop(self) -> Node:
+    def pop(self) -> any:
         if self.isEmpty():
             raise IndexError
         removed_node = self.head
@@ -35,8 +35,8 @@ class Stack:
         removed_node.next_node = None
         return removed_node
 
-    def peek(self) -> Node:
-        print(self.head.data)
+    def top(self) -> any:
+        return self.head.data
 
     def isEmpty(self) -> bool:
         return self.items_count == 0
