@@ -1,5 +1,5 @@
 from Enums.SideEnum import SideEnum as Side
-from Enums.PieceEnum import PieceEnum
+from Enums.PieceEnum import PieceEnum as PieceType
 from Move import Move
 from Stack import Stack
 
@@ -48,7 +48,7 @@ class ChessEngine:
             None, None, None, None, None, None, None, None,
             None, None, None, None, None, None, None, None,
             None, None, None, None, None, None, None, None,
-            None, None, None, Bishop(Side.WHITE), None, None, None, None,
+            None, Rook(Side.BLACK), None, Queen(Side.WHITE), None, None, None, None,
             None, None, None, None, None, None, None, None,
             None, None, None, None, None, None, None, None,
             None, None, None, None, None, None, None, None,
@@ -119,10 +119,18 @@ class ChessEngine:
 
         return True
 
-    def raycast(self, boardIndex: int, direction: int, includeAllies:bool = False, includeContact:bool = True, xrayDepth: int = 0) -> list[int]:
+    """
+    - boardIndex: The starting position on the board as an integer index.
+    - direction: The direction of movement as an integer offset from the current index.
+    - includeAllies: A boolean indicating whether the cells occupied by allied pieces should be included in the result.
+    - includeContact: A boolean indicating whether the first encountered piece position should be included.
+    - lifespan: The maximum number of cells the ray can travel.
+    - xrayDepth: An integer representing how many pieces the ray can pass through.
+    """
+    def raycast(self, boardIndex: int, direction: int, includeAllies:bool = False, includeContact:bool = True, lifespan:int= 8, xrayDepth: int = 0) -> list[int]:
         currentIndex = boardIndex
         locations = []
-        while True:
+        while lifespan > 0:
             currentIndexInRow = currentIndex % 8
             currentIndexInColumn = currentIndex // 8
             nextIndex = currentIndex + direction
@@ -143,9 +151,54 @@ class ChessEngine:
                 # Checks if the cell is same team
                 if not includeAllies and nextCell.side == self.__SideToPlay:
                     break
-                locations.append(nextIndex)
+
+                if includeContact:
+                    locations.append(nextIndex)
                 break
 
             locations.append(nextIndex)
             currentIndex = nextIndex
+            lifespan -= 1
         return locations
+
+    # Generates a list of indexes on the board the piece can go
+    def generate_rook_moves(self, boardIndex: int):
+        moves = []
+        for direction in self.__HorizontalMovement:
+            moves.extend(self.raycast(boardIndex, direction))
+
+        for direction in self.__VerticalMovement:
+            moves.extend(self.raycast(boardIndex, direction))
+
+        return moves
+
+    def generate_bishop_moves(self, boardIndex: int):
+        moves = []
+        for direction in self.__DiagonalMovement:
+            moves.extend(self.raycast(boardIndex, direction))
+
+        return moves
+
+    def generate_queen_moves(self, boardIndex: int):
+        moves = []
+        moves.extend(self.generate_bishop_moves(boardIndex))
+        moves.extend(self.generate_rook_moves(boardIndex))
+
+        return moves
+
+    def generate_all_moves(self):
+        moveGenerator = {PieceType.ROOK: self.generate_rook_moves,
+             PieceType.BISHOP: self.generate_bishop_moves,
+             PieceType.QUEEN: self.generate_queen_moves,
+             }
+        moves = []        
+        for boardIndex, cell in enumerate(self.board):
+            # Check if current cell is empty
+            if cell is None:
+                continue
+
+            if cell.side == self.__SideToPlay:
+
+                moves.append((boardIndex, moveGenerator[cell.pieceType](boardIndex)))
+
+        return moves
