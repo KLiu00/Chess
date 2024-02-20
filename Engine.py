@@ -186,10 +186,18 @@ class ChessEngine:
 
         return moves
 
+    def generate_king_moves(self, boardIndex: int):
+        moves = []
+        for direction in self.__DiagonalMovement + self.__HorizontalMovement + self.__VerticalMovement:
+            moves.extend(self.raycast(boardIndex, direction, lifespan=1))
+
+        return moves
+
     def generate_all_moves(self):
         moveGenerator = {PieceType.ROOK: self.generate_rook_moves,
              PieceType.BISHOP: self.generate_bishop_moves,
              PieceType.QUEEN: self.generate_queen_moves,
+             PieceType.KING: self.generate_king_moves
              }
         moves = []        
         for boardIndex, cell in enumerate(self.board):
@@ -198,7 +206,7 @@ class ChessEngine:
                 continue
 
             if cell.side == self.__SideToPlay:
-
                 moves.append((boardIndex, moveGenerator[cell.pieceType](boardIndex)))
 
         return moves
+
