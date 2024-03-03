@@ -222,10 +222,6 @@ class ChessEngine:
             moves.append(nextIndex)
         return moves
 
-    def generate_knight_moves(self, boardIndex: int):
-        
-        
-
     def generate_all_moves(self):
         moveGenerator = {PieceType.ROOK: self.generate_rook_moves,
              PieceType.BISHOP: self.generate_bishop_moves,
