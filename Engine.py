@@ -1,5 +1,6 @@
 from Enums.SideEnum import SideEnum as Side
 from Enums.PieceEnum import PieceEnum as PieceType
+import ChessUtility
 from Move import Move
 from Stack import Stack
 
@@ -45,10 +46,10 @@ class ChessEngine:
         # ]
 
         board = [
+            King(Side.WHITE), None, None, None, None, None, None, None,
             None, None, None, None, None, None, None, None,
             None, None, None, None, None, None, None, None,
             None, None, None, None, None, None, None, None,
-            None, Rook(Side.BLACK), None, Queen(Side.WHITE), None, None, None, None,
             None, None, None, None, None, None, None, None,
             None, None, None, None, None, None, None, None,
             None, None, None, None, None, None, None, None,
@@ -192,6 +193,10 @@ class ChessEngine:
             moves.extend(self.raycast(boardIndex, direction, lifespan=1))
 
         return moves
+
+    def generate_knight_moves(self, boardIndex: int):
+        
+        
 
     def generate_all_moves(self):
         moveGenerator = {PieceType.ROOK: self.generate_rook_moves,
