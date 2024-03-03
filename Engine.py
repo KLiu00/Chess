@@ -50,6 +50,7 @@ class ChessEngine:
             None, None, None, None, None, None, None, None,
             None, None, None, None, None, None, None, None,
             None, None, None, None, None, None, None, None,
+            None, Rook(Side.BLACK), None, Queen(Side.WHITE), None, None, None, None,
             None, None, None, None, None, None, None, None,
             None, None, None, None, None, None, None, None,
             None, None, None, None, None, None, None, None,
@@ -150,7 +151,7 @@ class ChessEngine:
             nextCell = self.board[nextIndex]
             if nextCell is not None:
                 # Checks if the cell is same team
-                if not includeAllies and nextCell.side == self.__SideToPlay:
+                if not includeAllies and nextCell.side == self.board[boardIndex].side:
                     break
 
                 if includeContact:
@@ -193,6 +194,33 @@ class ChessEngine:
             moves.extend(self.raycast(boardIndex, direction, lifespan=1))
 
         return moves
+    
+    def generate_knight_moves(self, boardIndex: int):
+        moves = []
+        directions = [17, 15, 10, 6, -17, -15, -10, -6]
+        currentIndexInRow = boardIndex % 8
+        currentIndexInColumn = boardIndex // 8
+        for direction in directions:
+            nextIndex = boardIndex + direction
+            # Check if out of board
+            if not 0 <= nextIndex <= 63:
+                continue
+
+            nextIndexInRow = nextIndex % 8
+            nextIndexInColumn = nextIndex // 8
+            # Checks if it "jumps" rows or columns
+            if abs(nextIndexInRow - currentIndexInRow) > 2 or abs(nextIndexInColumn - currentIndexInColumn) > 2:
+                continue
+
+            # Checks if next cell contains a piece
+            nextCell = self.board[nextIndex]
+            if nextCell is not None:
+                # Checks if the cell is same team
+                if nextCell.side == self.board[boardIndex].side:
+                    continue
+
+            moves.append(nextIndex)
+        return moves
 
     def generate_knight_moves(self, boardIndex: int):
         
@@ -202,7 +230,8 @@ class ChessEngine:
         moveGenerator = {PieceType.ROOK: self.generate_rook_moves,
              PieceType.BISHOP: self.generate_bishop_moves,
              PieceType.QUEEN: self.generate_queen_moves,
-             PieceType.KING: self.generate_king_moves
+             PieceType.KING: self.generate_king_moves,
+             PieceType.KNIGHT: self.generate_knight_moves
              }
         moves = []        
         for boardIndex, cell in enumerate(self.board):
