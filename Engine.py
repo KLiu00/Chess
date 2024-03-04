@@ -1,6 +1,5 @@
 from Enums.SideEnum import SideEnum as Side
 from Enums.PieceEnum import PieceEnum as PieceType
-import ChessUtility
 from Move import Move
 from Stack import Stack
 
@@ -46,15 +45,14 @@ class ChessEngine:
         # ]
 
         board = [
-            King(Side.WHITE), None, None, None, None, None, None, None,
-            None, None, None, None, None, None, None, None,
-            None, None, None, None, None, None, None, None,
-            None, None, None, None, None, None, None, None,
-            None, Rook(Side.BLACK), None, Queen(Side.WHITE), None, None, None, None,
             None, None, None, None, None, None, None, None,
             None, None, None, None, None, None, None, None,
             None, None, None, None, None, None, None, None,
             None, None, None, None, None, None, None, None,
+            None, None, None, None, None, None, None, None,
+            None, None, None, None, None, None, None, None,
+            None, None, None, None, None, Pawn(Side.BLACK), None, None,
+            None, None, None, None, Pawn(Side.WHITE), None, None, None,
         ]
         return board
 
@@ -118,6 +116,9 @@ class ChessEngine:
 
         # Removes the unmade move
         self.__MoveHistory.pop()
+
+        # Switches the side
+        self.switchSide()
 
         return True
 
@@ -221,14 +222,50 @@ class ChessEngine:
 
             moves.append(nextIndex)
         return moves
+    
+    def generate_pawn_moves(self, boardIndex: int):
+        # Gets information of piece from the board
+        hasMoved = self.board[boardIndex].hasMoved
+        side = self.board[boardIndex].side
+        
+        moves = []
+        sideMultiplier = 1 if side == Side.BLACK else -1
+        movementDirection = 8
+
+        # If the piece has not moved
+        rayLifespan = 1 if hasMoved else 2
+        # Generates linear pawn movement
+        moves.extend(self.raycast(boardIndex, sideMultiplier*movementDirection, includeContact=False, lifespan=rayLifespan))
+        
+        # Taking pieces
+        takingDirections = [7, 9]
+        for direction in takingDirections:
+            # Adjust for which side the pawn is on
+            direction *= sideMultiplier
+            move = self.raycast(boardIndex, direction, includeContact=True, lifespan=1)
+            # Check if potential move is possible
+            if len(move) == 0:
+                continue
+            # Gets the move, raycast returns a list but there will only be one in this case.
+            move = move[0]
+            # Checks if the move location is an enemy piece, if yes add to move list.
+            if self.board[move] is not None:
+                moves.append(move)
+
+
+        return moves
+
+        
 
     def generate_all_moves(self):
-        moveGenerator = {PieceType.ROOK: self.generate_rook_moves,
+        moveGenerator = {
+             PieceType.ROOK: self.generate_rook_moves,
              PieceType.BISHOP: self.generate_bishop_moves,
              PieceType.QUEEN: self.generate_queen_moves,
              PieceType.KING: self.generate_king_moves,
-             PieceType.KNIGHT: self.generate_knight_moves
-             }
+             PieceType.KNIGHT: self.generate_knight_moves,
+             PieceType.PAWN: self.generate_pawn_moves
+        }
         moves = []        
         for boardIndex, cell in enumerate(self.board):
             # Check if current cell is empty
