@@ -36,6 +36,8 @@ class Stack:
         return removed_node
 
     def top(self) -> any:
+        if self.isEmpty():
+            return None
         return self.head.data
 
     def isEmpty(self) -> bool:
