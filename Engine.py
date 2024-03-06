@@ -3,6 +3,8 @@ from Enums.PieceEnum import PieceEnum as PieceType
 from Move import Move
 from Stack import Stack
 
+from copy import copy
+
 from Pieces.BasePiece import IPiece
 from Pieces.Queen import Queen
 from Pieces.Bishop import Bishop
@@ -45,14 +47,14 @@ class ChessEngine:
         # ]
 
         board = [
-            None, None, None, None, None, None, None, None,
-            None, None, None, None, None, None, None, None,
-            None, None, None, None, None, None, None, None,
+            King(Side.BLACK), None, None, None, None, None, None, None,
             None, None, None, None, None, None, None, None,
             None, None, None, None, None, None, None, None,
             None, None, None, None, None, None, None, None,
             None, None, None, None, None, Pawn(Side.BLACK), None, None,
+            None, None, None, None, None, None, None, None,
             None, None, None, None, Pawn(Side.WHITE), None, None, None,
+            King(Side.WHITE), None, None, None, None, None, None, None,
         ]
         return board
 
@@ -95,8 +97,8 @@ class ChessEngine:
         self.board[finalIndex] = initialCell
 
         # Add move onto the move history.
-        self.__MoveHistory.push(Move(initialIndex, finalIndex, initialCell, finalCell))
-        self.board[initialIndex].hasMoved = True
+        self.__MoveHistory.push(Move(initialIndex, finalIndex, copy(initialCell), copy(finalCell)))
+        self.board[finalIndex].hasMoved = True
 
         # Switch playing sides
         self.switchSide()
@@ -195,7 +197,7 @@ class ChessEngine:
             moves.extend(self.raycast(boardIndex, direction, lifespan=1))
 
         return moves
-    
+
     def generate_knight_moves(self, boardIndex: int):
         moves = []
         directions = [17, 15, 10, 6, -17, -15, -10, -6]
@@ -222,12 +224,12 @@ class ChessEngine:
 
             moves.append(nextIndex)
         return moves
-    
+
     def generate_pawn_moves(self, boardIndex: int):
         # Gets information of piece from the board
         hasMoved = self.board[boardIndex].hasMoved
         side = self.board[boardIndex].side
-        
+
         moves = []
         sideMultiplier = 1 if side == Side.BLACK else -1
         movementDirection = 8
@@ -236,7 +238,7 @@ class ChessEngine:
         rayLifespan = 1 if hasMoved else 2
         # Generates linear pawn movement
         moves.extend(self.raycast(boardIndex, sideMultiplier*movementDirection, includeContact=False, lifespan=rayLifespan))
-        
+
         # Taking pieces
         takingDirections = [7, 9]
         for direction in takingDirections:
@@ -252,10 +254,25 @@ class ChessEngine:
             if self.board[move] is not None:
                 moves.append(move)
 
+        # En passant logic
+        """
+        1. Moving piece has to move behind the pawn with passed it, taking it too.
+        2. En passant must be available only immediately after the pawn makes the two-square move,
+        if the player does not capture en passant on the next move, the opportunity is lost.
+        """
+        mostRecentMove: Move = self.__MoveHistory.top()
+        # Checks if previous move exists
+        if mostRecentMove:
+            # Checks if the piece type is pawn
+            if mostRecentMove.pieceMoved.pieceType is PieceType.PAWN:
+                    # Check if they are in the same row
+                    if mostRecentMove.endPosition // 8 == boardIndex // 8:
+                        # Check if is next to eachother
+                        if abs((mostRecentMove.endPosition % 8) - (boardIndex % 8)) == 1:
+                            moves.append(mostRecentMove.endPosition + 8 * sideMultiplier)
+
 
         return moves
-
-        
 
     def generate_all_moves(self):
         moveGenerator = {
@@ -276,4 +293,3 @@ class ChessEngine:
                 moves.append((boardIndex, moveGenerator[cell.pieceType](boardIndex)))
 
         return moves
-
