@@ -81,9 +81,9 @@ class ChessEngine:
         self.__SideToPlay = Side.WHITE if self.__SideToPlay == Side.BLACK else Side.BLACK
 
     # Makes a move on the board and returns whether the operation failed or succeeded.
-    def makeMove(self, initialIndex: int, finalIndex: int) -> bool:
-        initialCell = self.board[initialIndex]
-        finalCell = self.board[finalIndex]
+    def makeMove(self, move: Move) -> bool:
+        initialCell = self.board[move.startPosition]
+        finalCell = self.board[move.endPosition]
         takingPiece = False if finalCell is None else True
 
         # Selected nothing to move
@@ -93,12 +93,14 @@ class ChessEngine:
         if takingPiece and initialCell.side == finalCell.side:
             return False
 
-        self.board[initialIndex] = None
-        self.board[finalIndex] = initialCell
+        self.board[move.startPosition] = None
+        self.board[move.capturedPiecePosition] = None
+        self.board[move.endPosition] = initialCell
+
 
         # Add move onto the move history.
-        self.__MoveHistory.push(Move(initialIndex, finalIndex, copy(initialCell), copy(finalCell)))
-        self.board[finalIndex].hasMoved = True
+        self.__MoveHistory.push(move)
+        self.board[move.endPosition].hasMoved = True
 
         # Switch playing sides
         self.switchSide()
@@ -111,10 +113,11 @@ class ChessEngine:
             return False
 
         # Gets the most recent move
-        previousMove = self.__MoveHistory.top()
+        previousMove: Move = self.__MoveHistory.top()
 
         self.board[previousMove.startPosition] = previousMove.pieceMoved
-        self.board[previousMove.endPosition] = previousMove.capturedPiece
+        self.board[previousMove.endPosition] = None
+        self.board[previousMove.capturedPiecePosition] = previousMove.capturedPieceMoved
 
         # Removes the unmade move
         self.__MoveHistory.pop()
@@ -132,7 +135,7 @@ class ChessEngine:
     - lifespan: The maximum number of cells the ray can travel.
     - xrayDepth: An integer representing how many pieces the ray can pass through.
     """
-    def raycast(self, boardIndex: int, direction: int, includeAllies:bool = False, includeContact:bool = True, lifespan:int= 8, xrayDepth: int = 0) -> list[int]:
+    def raycast(self, boardIndex: int, direction: int, includeAllies:bool = False, includeContact:bool = True, lifespan:int= 8, xrayDepth: int = 0) -> list[Move]:
         currentIndex = boardIndex
         locations = []
         while lifespan > 0:
@@ -158,10 +161,12 @@ class ChessEngine:
                     break
 
                 if includeContact:
-                    locations.append(nextIndex)
+                    move = Move(boardIndex, nextIndex, copy(self.board[boardIndex]), copy(nextCell))
+                    locations.append(move)
                 break
-
-            locations.append(nextIndex)
+            
+            move = Move(boardIndex, nextIndex, copy(self.board[boardIndex]), copy(nextCell))
+            locations.append(move)
             currentIndex = nextIndex
             lifespan -= 1
         return locations
@@ -244,14 +249,14 @@ class ChessEngine:
         for direction in takingDirections:
             # Adjust for which side the pawn is on
             direction *= sideMultiplier
-            move = self.raycast(boardIndex, direction, includeContact=True, lifespan=1)
+            move: list[Move] = self.raycast(boardIndex, direction, includeContact=True, lifespan=1)
             # Check if potential move is possible
             if len(move) == 0:
                 continue
             # Gets the move, raycast returns a list but there will only be one in this case.
-            move = move[0]
+            move: Move = move[0]
             # Checks if the move location is an enemy piece, if yes add to move list.
-            if self.board[move] is not None:
+            if move.capturedPieceMoved is not None:
                 moves.append(move)
 
         # En passant logic
@@ -269,12 +274,13 @@ class ChessEngine:
                     if mostRecentMove.endPosition // 8 == boardIndex // 8:
                         # Check if is next to eachother
                         if abs((mostRecentMove.endPosition % 8) - (boardIndex % 8)) == 1:
-                            moves.append(mostRecentMove.endPosition + 8 * sideMultiplier)
+                            a = Move(boardIndex,mostRecentMove.endPosition + 8 * sideMultiplier, copy(self.board[boardIndex]), mostRecentMove.pieceMoved, True, mostRecentMove.endPosition)
+                            moves.append(a)
 
 
         return moves
 
-    def generate_all_moves(self):
+    def generate_all_moves(self) -> list[Move]:
         moveGenerator = {
              PieceType.ROOK: self.generate_rook_moves,
              PieceType.BISHOP: self.generate_bishop_moves,
@@ -290,6 +296,6 @@ class ChessEngine:
                 continue
 
             if cell.side == self.__SideToPlay:
-                moves.append((boardIndex, moveGenerator[cell.pieceType](boardIndex)))
+                moves.extend(moveGenerator[cell.pieceType](boardIndex))
 
         return moves

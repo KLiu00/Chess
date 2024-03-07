@@ -11,11 +11,10 @@ if __name__ == '__main__':
         all_moves = instance.generate_all_moves()
         rf_moves = []
         total = 0
-        for boardIndex, move_set in all_moves:
-            for move in move_set:
-                total += 1 
-                rf_moves.append(f"{indexToRF(boardIndex)}{indexToRF(move)}")
-                print(f"{indexToRF(boardIndex)}{indexToRF(move)}", end=" ")
+        for move in all_moves:
+            total += 1 
+            rf_moves.append(f"{indexToRF(move.startPosition)}{indexToRF(move.endPosition)}")
+            print(f"{indexToRF(move.startPosition)}{indexToRF(move.endPosition)}", end=" ")
         print("\nTotal amount of moves:" , total)
 
         fromMake = input("From: ")
@@ -29,7 +28,5 @@ if __name__ == '__main__':
         if fromMake + toMake not in rf_moves:
             # if not in the list, ask for move again by skipping make move logic
             continue
-        fromIndex = rfToIndex(fromMake)
-        toIndex = rfToIndex(toMake)
 
-        instance.makeMove(fromIndex, toIndex)
+        instance.makeMove(all_moves[rf_moves.index(fromMake+toMake)])
