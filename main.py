@@ -17,16 +17,15 @@ if __name__ == '__main__':
             print(f"{indexToRF(move.startPosition)}{indexToRF(move.endPosition)}", end=" ")
         print("\nTotal amount of moves:" , total)
 
-        fromMake = input("From: ")
-        toMake = input("to: ")
+        toMake = input("Enter your move: ")
 
-        if fromMake == "-1" or toMake == "-1":
+        if toMake == "-1":
             instance.unmakeMove()
             continue
 
         # Check if move in allowed moves list
-        if fromMake + toMake not in rf_moves:
+        if toMake not in rf_moves:
             # if not in the list, ask for move again by skipping make move logic
             continue
 
-        instance.makeMove(all_moves[rf_moves.index(fromMake+toMake)])
+        instance.makeMove(all_moves[rf_moves.index(toMake)])
