@@ -31,31 +31,31 @@ class ChessEngine:
 
     # Returns a fresh board
     def __InitBoard(self) -> list[IPiece]:
-        # board = [
-        #     Rook(Side.BLACK), Knight(Side.BLACK), Bishop(Side.BLACK), Queen(Side.BLACK),
-        #     King(Side.BLACK), Bishop(Side.BLACK), Knight(Side.BLACK), Rook(Side.BLACK),
-        #     Pawn(Side.BLACK), Pawn(Side.BLACK), Pawn(Side.BLACK), Pawn(Side.BLACK),
-        #     Pawn(Side.BLACK), Pawn(Side.BLACK), Pawn(Side.BLACK), Pawn(Side.BLACK),
-        #     None, None, None, None, None, None, None, None,
-        #     None, None, None, None, None, None, None, None,
-        #     None, None, None, None, None, None, None, None,
-        #     None, None, None, None, None, None, None, None,
-        #     Pawn(Side.WHITE), Pawn(Side.WHITE), Pawn(Side.WHITE), Pawn(Side.WHITE),
-        #     Pawn(Side.WHITE), Pawn(Side.WHITE), Pawn(Side.WHITE), Pawn(Side.WHITE),
-        #     Rook(Side.WHITE), Knight(Side.WHITE), Bishop(Side.WHITE), Queen(Side.WHITE),
-        #     King(Side.WHITE), Bishop(Side.WHITE), Knight(Side.WHITE), Rook(Side.WHITE)
-        # ]
-
         board = [
-            King(Side.BLACK), None, None, None, None, None, None, None,
+            Rook(Side.BLACK), Knight(Side.BLACK), Bishop(Side.BLACK), Queen(Side.BLACK),
+            King(Side.BLACK), Bishop(Side.BLACK), Knight(Side.BLACK), Rook(Side.BLACK),
+            Pawn(Side.BLACK), Pawn(Side.BLACK), Pawn(Side.BLACK), Pawn(Side.BLACK),
+            Pawn(Side.BLACK), Pawn(Side.BLACK), Pawn(Side.BLACK), Pawn(Side.BLACK),
             None, None, None, None, None, None, None, None,
             None, None, None, None, None, None, None, None,
             None, None, None, None, None, None, None, None,
-            None, None, None, None, None, Pawn(Side.BLACK), None, None,
             None, None, None, None, None, None, None, None,
-            None, None, None, None, Pawn(Side.WHITE), None, None, None,
-            King(Side.WHITE), None, None, None, None, None, None, None,
+            Pawn(Side.WHITE), Pawn(Side.WHITE), Pawn(Side.WHITE), Pawn(Side.WHITE),
+            Pawn(Side.WHITE), Pawn(Side.WHITE), Pawn(Side.WHITE), Pawn(Side.WHITE),
+            Rook(Side.WHITE), Knight(Side.WHITE), Bishop(Side.WHITE), Queen(Side.WHITE),
+            King(Side.WHITE), Bishop(Side.WHITE), Knight(Side.WHITE), Rook(Side.WHITE)
         ]
+
+        # board = [
+        #     King(Side.BLACK), None, None, None, None, None, None, None,
+        #     None, None, None, None, None, None, None, None,
+        #     None, None, None, None, None, None, None, None,
+        #     None, None, None, None, None, None, None, None,
+        #     None, None, None, None, None, Pawn(Side.BLACK), None, None,
+        #     None, None, None, None, None, None, None, None,
+        #     None, None, None, None, Pawn(Side.WHITE), None, None, None,
+        #     King(Side.WHITE), None, None, None, None, None, None, None,
+        # ]
         return board
 
     # Returns a list of the requested pieces and the respective index on the board
@@ -227,7 +227,8 @@ class ChessEngine:
                 if nextCell.side == self.board[boardIndex].side:
                     continue
 
-            moves.append(nextIndex)
+            move = Move(boardIndex, nextIndex, copy(self.board[boardIndex]), copy(nextCell))
+            moves.append(move)
         return moves
 
     def generate_pawn_moves(self, boardIndex: int):
