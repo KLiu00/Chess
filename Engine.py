@@ -273,8 +273,8 @@ class ChessEngine:
             if mostRecentMove.pieceMoved.pieceType is PieceType.PAWN:
                     # Check if they are in the same row
                     if mostRecentMove.endPosition // 8 == boardIndex // 8:
-                        # Check if is next to eachother
-                        if abs((mostRecentMove.endPosition % 8) - (boardIndex % 8)) == 1:
+                        # Check if is next to eachother and is dual move
+                        if abs((mostRecentMove.endPosition % 8) - (boardIndex % 8)) == 1 and abs(mostRecentMove.startPosition - mostRecentMove.endPosition) // 8 == 2:
                             a = Move(boardIndex,mostRecentMove.endPosition + 8 * sideMultiplier, copy(self.board[boardIndex]), mostRecentMove.pieceMoved, True, mostRecentMove.endPosition)
                             moves.append(a)
 
@@ -300,3 +300,5 @@ class ChessEngine:
                 moves.extend(moveGenerator[cell.pieceType](boardIndex))
 
         return moves
+    
+    
