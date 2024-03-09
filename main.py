@@ -69,7 +69,7 @@ if __name__ == "__main__":
                     current_mouse_location[0], current_mouse_location[1]
                 )
                 toMake = f"{indexToRF(start_pressed_board_position)}{indexToRF(current_board_position)}"
-                all_moves = instance.generate_all_moves()
+                all_moves = instance.generate_legal_moves()
                 rf_moves = []
                 total = 0
                 for move in all_moves:
@@ -78,6 +78,7 @@ if __name__ == "__main__":
                         f"{indexToRF(move.startPosition)}{indexToRF(move.endPosition)}"
                     )
                 if toMake not in rf_moves:
+                    instance.unmakeMove()
                     continue
                 instance.makeMove(all_moves[rf_moves.index(toMake)])
                 print(instance.displayBoard())

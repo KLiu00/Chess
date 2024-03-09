@@ -97,6 +97,10 @@ class ChessEngine:
         self.board[move.capturedPiecePosition] = None
         self.board[move.endPosition] = initialCell
 
+        if isinstance(move, CastleMove):
+            self.board[move.rook_start_position] = None
+            self.board[move.rook_end_position] = move.rook_piece
+            move.rook_piece.hasMoved = True
 
         # Add move onto the move history.
         self.__MoveHistory.push(move)
@@ -118,6 +122,11 @@ class ChessEngine:
         self.board[previousMove.startPosition] = previousMove.pieceMoved
         self.board[previousMove.endPosition] = None
         self.board[previousMove.capturedPiecePosition] = previousMove.capturedPieceMoved
+
+        if isinstance(previousMove, CastleMove):
+            self.board[previousMove.rook_end_position] = None
+            self.board[previousMove.rook_start_position] = previousMove.rook_piece
+            previousMove.rook_piece.hasMoved = False
 
         # Removes the unmade move
         self.__MoveHistory.pop()
