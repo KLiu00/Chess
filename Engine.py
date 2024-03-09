@@ -173,7 +173,7 @@ class ChessEngine:
                     move = Move(boardIndex, nextIndex, copy(self.board[boardIndex]), copy(nextCell))
                     locations.append(move)
                 break
-            
+
             move = Move(boardIndex, nextIndex, copy(self.board[boardIndex]), copy(nextCell))
             locations.append(move)
             currentIndex = nextIndex
@@ -280,13 +280,22 @@ class ChessEngine:
         if mostRecentMove:
             # Checks if the piece type is pawn
             if mostRecentMove.pieceMoved.pieceType is PieceType.PAWN:
-                    # Check if they are in the same row
-                    if mostRecentMove.endPosition // 8 == boardIndex // 8:
-                        # Check if is next to eachother and is dual move
-                        if abs((mostRecentMove.endPosition % 8) - (boardIndex % 8)) == 1 and abs(mostRecentMove.startPosition - mostRecentMove.endPosition) // 8 == 2:
-                            a = Move(boardIndex,mostRecentMove.endPosition + 8 * sideMultiplier, copy(self.board[boardIndex]), mostRecentMove.pieceMoved, True, mostRecentMove.endPosition)
-                            moves.append(a)
+                # Check if they are in the same row
+                if mostRecentMove.endPosition // 8 == boardIndex // 8:
+                    # Check if is next to eachother and is dual move
+                    if abs((mostRecentMove.endPosition % 8) - (boardIndex % 8)) == 1 and abs(mostRecentMove.startPosition - mostRecentMove.endPosition) // 8 == 2:
+                        a = Move(boardIndex,mostRecentMove.endPosition + 8 * sideMultiplier, copy(self.board[boardIndex]), mostRecentMove.pieceMoved, True, mostRecentMove.endPosition)
+                        moves.append(a)
 
+        return moves
+
+    def is_attacked(self, board_indexes: list[int]) -> bool:
+        states: list[bool] = []
+        moves = self.generate_all_moves(Side.BLACK if self.SideToPlay is Side.WHITE else Side.BLACK)
+        move_indexes = [move.capturedPiecePosition for move in moves]
+        for index in board_indexes:
+            states.append(index in move_indexes)   
+        return states
 
         return moves
 
