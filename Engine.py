@@ -1,6 +1,6 @@
 from Enums.SideEnum import SideEnum as Side
 from Enums.PieceEnum import PieceEnum as PieceType
-from Move import Move
+from Move import Move, CastleMove
 from Stack import Stack
 
 from copy import copy
@@ -17,7 +17,7 @@ from Pieces.Pawn import Pawn
 class ChessEngine:
 
     def __init__(self) -> None:
-        self.__SideToPlay: Side = Side.WHITE
+        self.SideToPlay: Side = Side.WHITE
         self.__MoveHistory = Stack()
         self.turnCount = 0
         self.board = []
@@ -54,8 +54,9 @@ class ChessEngine:
         #     None, None, None, None, None, Pawn(Side.BLACK), None, None,
         #     None, None, None, None, None, None, None, None,
         #     None, None, None, None, Pawn(Side.WHITE), None, None, None,
-        #     King(Side.WHITE), None, None, None, None, None, None, None,
+        #     Rook(Side.WHITE), None, None, None, King(Side.WHITE), None, None, Rook(Side.WHITE),
         # ]
+
         return board
 
     # Returns a list of the requested pieces and the respective index on the board
@@ -78,7 +79,7 @@ class ChessEngine:
         return display
 
     def switchSide(self) -> None:
-        self.__SideToPlay = Side.WHITE if self.__SideToPlay == Side.BLACK else Side.BLACK
+        self.SideToPlay = Side.WHITE if self.SideToPlay == Side.BLACK else Side.BLACK
 
     # Makes a move on the board and returns whether the operation failed or succeeded.
     def makeMove(self, move: Move) -> bool:
@@ -142,9 +143,9 @@ class ChessEngine:
     - includeAllies: A boolean indicating whether the cells occupied by allied pieces should be included in the result.
     - includeContact: A boolean indicating whether the first encountered piece position should be included.
     - lifespan: The maximum number of cells the ray can travel.
-    - xrayDepth: An integer representing how many pieces the ray can pass through.
+    - xrayDepth: Passes through first piece until contact with another
     """
-    def raycast(self, boardIndex: int, direction: int, includeAllies:bool = False, includeContact:bool = True, lifespan:int= 8, xrayDepth: int = 0) -> list[Move]:
+    def raycast(self, boardIndex: int, direction: int, includeAllies:bool = False, includeContact:bool = True, lifespan:int= 8, xray: bool = False) -> list[Move]:
         currentIndex = boardIndex
         locations = []
         while lifespan > 0:
@@ -304,9 +305,58 @@ class ChessEngine:
             king = king_position
         return self.is_attacked([king])[0]
 
+    def castling_moves(self) -> list[Move]:
+        king: list[tuple[IPiece, int]] = self.getPieces(PieceType.KING, self.SideToPlay)[0]
+
+        king_piece, king_position = king
+
+        moves: list[Move] = []
+        short_castle_allowed = long_castle_allowed = False
+        short_rook = long_rook = None
+
+        # if the king has moved or in check, skip.
+        if king_piece.hasMoved or self.in_check(king_position):
+            return moves
+
+        # Check if no piece in between them, Short castle
+        if squares := self.raycast(king_position, 1, True):
+            if squares[-1].capturedPieceMoved is not None and squares[-1].capturedPieceMoved.pieceType is PieceType.ROOK:
+                short_castle_allowed = True
+                short_rook = squares[-1]
+        # Long Castle
+        if squares := self.raycast(king_position, -1, True):
+            if squares[-1].capturedPieceMoved is not None and squares[-1].capturedPieceMoved.pieceType is PieceType.ROOK:
+                long_castle_allowed = True
+                long_rook = squares[-1]
+
+        if short_castle_allowed:
+            sq1, sq2 = self.is_attacked([king_position+1, king_position+2])
+            if not (sq1 or sq2):
+                a = CastleMove(
+                    king_position,
+                    short_rook.capturedPiecePosition,
+                    copy(king_piece),
+                    copy(short_rook.capturedPieceMoved),
+                    king_position + 2,
+                    king_position + 1,
+                )
+                moves.append(a)
+        # long castle
+        if long_castle_allowed:
+            sq1, sq2 = self.is_attacked([king_position-1, king_position-2])
+            if not (sq1 or sq2) and not long_rook.capturedPieceMoved.hasMoved:
+                a = CastleMove(
+                    king_position,
+                    long_rook.capturedPiecePosition,
+                    copy(king_piece),
+                    copy(long_rook.capturedPieceMoved),
+                    king_position - 2,
+                    king_position - 1,
+                )
+                moves.append(a)
         return moves
 
-    def generate_all_moves(self) -> list[Move]:
+    def generate_all_moves(self, side: Side) -> list[Move]:
         moveGenerator = {
              PieceType.ROOK: self.generate_rook_moves,
              PieceType.BISHOP: self.generate_bishop_moves,
@@ -321,9 +371,13 @@ class ChessEngine:
             if cell is None:
                 continue
 
-            if cell.side == self.__SideToPlay:
+            if cell.side == side :
                 moves.extend(moveGenerator[cell.pieceType](boardIndex))
 
         return moves
-    
-    
+
+    def generate_legal_moves(self) -> list[Move]:
+        moves: list[Move] = self.generate_all_moves(self.SideToPlay)
+        moves.extend(self.castling_moves())
+
+        return moves
