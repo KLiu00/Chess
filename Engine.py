@@ -297,6 +297,13 @@ class ChessEngine:
             states.append(index in move_indexes)   
         return states
 
+    def in_check(self, king_position: int = None) -> bool:
+        if king_position is None:
+            king = self.getPieces(PieceType.KING, self.SideToPlay)[0][0]
+        else:
+            king = king_position
+        return self.is_attacked([king])[0]
+
         return moves
 
     def generate_all_moves(self) -> list[Move]:
