@@ -10,6 +10,11 @@ def get_board_index(x, y):
     row = y // pixel_size
     return column + 8 * row
 
+def draw_square(size, board_index):
+    currentRow = board_index // 8 * pixel_size
+    currentColumn = board_index % 8 * pixel_size
+    return pygame.Rect(currentColumn, currentRow, size, size)
+
 
 def draw_board(canvas, board):
     canvas.fill((255, 255, 255))
@@ -17,20 +22,10 @@ def draw_board(canvas, board):
     # Draw squares
     for i in range(64):
         currentRow = i // 8
-        currentColumn = i % 8
 
         odd = (i + currentRow) % 2
         color = (255, 255, 255) if odd else (220, 220, 220)
-        ays = pygame.draw.rect(
-            canvas,
-            color,
-            [
-                currentColumn * pixel_size,
-                currentRow * pixel_size,
-                pixel_size,
-                pixel_size,
-            ],
-        )
+        ays = pygame.draw.rect(canvas, color, draw_square(pixel_size, i))
         squares.append(ays)
 
     for i, square in enumerate(squares):
@@ -53,9 +48,13 @@ if __name__ == "__main__":
 
     previous_pressed_state = False
     start_pressed_board_position = 0
+    draw_board(canvas, instance.board)
+
     while not exit:
-        draw_board(canvas, instance.board)
         for event in pygame.event.get():
+            if instance.SideToPlay is SideEnum.BLACK:
+                instance.makeMove(instance.search_moves())
+                draw_board(canvas, instance.board)
             current_mouse_location = pygame.mouse.get_pos()
 
             if event.type is pygame.QUIT:
@@ -64,7 +63,12 @@ if __name__ == "__main__":
                 start_pressed_board_position = get_board_index(
                     current_mouse_location[0], current_mouse_location[1]
                 )
+                all_moves = instance.generate_legal_moves()
+                for moves in all_moves:
+                    if moves.startPosition is start_pressed_board_position:
+                        pygame.draw.rect(canvas, (0,255,0), draw_square(pixel_size, moves.endPosition), 5)
             if event.type == pygame.MOUSEBUTTONUP:
+                draw_board(canvas, instance.board)
                 current_board_position = get_board_index(
                     current_mouse_location[0], current_mouse_location[1]
                 )
@@ -78,9 +82,9 @@ if __name__ == "__main__":
                         f"{indexToRF(move.startPosition)}{indexToRF(move.endPosition)}"
                     )
                 if toMake not in rf_moves:
-                    instance.unmakeMove()
                     continue
                 instance.makeMove(all_moves[rf_moves.index(toMake)])
+                draw_board(canvas, instance.board)
                 print(instance.displayBoard())
         if instance.checkmated:
             exit=True

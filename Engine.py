@@ -13,6 +13,7 @@ from Pieces.Knight import Knight
 from Pieces.Rook import Rook
 from Pieces.Pawn import Pawn
 
+from Evaluator import evaluate_board
 
 class ChessEngine:
 
@@ -86,30 +87,24 @@ class ChessEngine:
         initialCell = self.board[move.startPosition]
         finalCell = self.board[move.endPosition]
         takingPiece = False if finalCell is None else True
-
         # Selected nothing to move
         if initialCell is None:
             return False
         # Attempting to take self piece
         if takingPiece and initialCell.side == finalCell.side:
             return False
-
         self.board[move.startPosition] = None
         self.board[move.capturedPiecePosition] = None
         self.board[move.endPosition] = initialCell
-
         if isinstance(move, CastleMove):
             self.board[move.rook_start_position] = None
             self.board[move.rook_end_position] = move.rook_piece
             move.rook_piece.hasMoved = True
-
         # Add move onto the move history.
         self.__MoveHistory.push(move)
         self.board[move.endPosition].hasMoved = True
-
         # Switch playing sides
         self.switchSide()
-
         return True
 
     def unmakeMove(self) -> bool:
@@ -280,19 +275,20 @@ class ChessEngine:
         # Checks if previous move exists
         if mostRecentMove:
             # Checks if the piece type is pawn
-            if mostRecentMove.pieceMoved.pieceType is PieceType.PAWN:
+            if mostRecentMove.pieceMoved.pieceType is PieceType.PAWN and mostRecentMove.pieceMoved.side is not side:
                 # Check if they are in the same row
                 if mostRecentMove.endPosition // 8 == boardIndex // 8:
                     # Check if is next to eachother and is dual move
                     if abs((mostRecentMove.endPosition % 8) - (boardIndex % 8)) == 1 and abs(mostRecentMove.startPosition - mostRecentMove.endPosition) // 8 == 2:
-                        a = Move(boardIndex,mostRecentMove.endPosition + 8 * sideMultiplier, copy(self.board[boardIndex]), mostRecentMove.pieceMoved, True, mostRecentMove.endPosition)
+                        a = Move(boardIndex,mostRecentMove.endPosition + 8 * sideMultiplier, copy(self.board[boardIndex]), mostRecentMove.pieceMoved, mostRecentMove.endPosition)
                         moves.append(a)
 
         return moves
 
-    def is_attacked(self, board_indexes: list[int]) -> bool:
+    def is_attacked(self, moves: list[Move] = [], board_indexes: list[int] = [], attacking_piece_board_index: list[int] = []) -> bool:
         states: list[bool] = []
-        moves = self.generate_all_moves(Side.BLACK if self.SideToPlay is Side.WHITE else Side.BLACK)
+        if len(moves) == 0:
+            moves = self.generate_all_moves(Side.BLACK if self.SideToPlay is Side.WHITE else Side.WHITE)
         move_indexes = [move.capturedPiecePosition for move in moves]
         for index in board_indexes:
             states.append(index in move_indexes)   
@@ -303,10 +299,13 @@ class ChessEngine:
             king = self.getPieces(PieceType.KING, self.SideToPlay)[0][0]
         else:
             king = king_position
-        return self.is_attacked([king])[0]
+        return self.is_attacked(board_indexes=[king])[0]
 
     def castling_moves(self) -> list[Move]:
-        king: list[tuple[IPiece, int]] = self.getPieces(PieceType.KING, self.SideToPlay)[0]
+        kings = self.getPieces(PieceType.KING, self.SideToPlay)
+        if len(kings) == 0:
+            return []
+        king: list[tuple[IPiece, int]] = kings[0]
 
         king_piece, king_position = king
 
@@ -330,7 +329,7 @@ class ChessEngine:
                 long_rook = squares[-1]
 
         if short_castle_allowed:
-            sq1, sq2 = self.is_attacked([king_position+1, king_position+2])
+            sq1, sq2 = self.is_attacked(board_indexes=[king_position+1, king_position+2])
             if not (sq1 or sq2):
                 a = CastleMove(
                     king_position,
@@ -343,7 +342,7 @@ class ChessEngine:
                 moves.append(a)
         # long castle
         if long_castle_allowed:
-            sq1, sq2 = self.is_attacked([king_position-1, king_position-2])
+            sq1, sq2 = self.is_attacked(board_indexes=[king_position-1, king_position-2])
             if not (sq1 or sq2) and not long_rook.capturedPieceMoved.hasMoved:
                 a = CastleMove(
                     king_position,
@@ -371,7 +370,7 @@ class ChessEngine:
             if cell is None:
                 continue
 
-            if cell.side == side :
+            if cell.side is side :
                 moves.extend(moveGenerator[cell.pieceType](boardIndex))
 
         return moves
@@ -381,3 +380,71 @@ class ChessEngine:
         moves.extend(self.castling_moves())
 
         return moves
+    
+
+    def minmax(self, depth, maximising):
+        if depth == 0 or self.checkmated:
+            return evaluate_board(self.board)
+
+        if maximising:
+            max_eval = -99999
+            for move in self.generate_legal_moves():
+                self.makeMove(move)
+                evaluation = self.minmax(depth - 1, not maximising)
+                self.unmakeMove()
+                max_eval = max(max_eval, evaluation)
+            return max_eval
+        else:
+            min_eval = 99999
+            for move in self.generate_legal_moves():
+                self.makeMove(move)
+                evaluation = self.minmax(depth - 1, not maximising)
+                self.unmakeMove()
+                min_eval = min(min_eval, evaluation)
+            return min_eval
+
+    def minmax_a_b(self, depth, maximising, alpha, beta):
+        if depth == 0 or self.checkmated:
+            return evaluate_board(self.board)
+
+        if maximising:
+            max_eval = -99999
+            for move in self.generate_legal_moves():
+                self.makeMove(move)
+                evaluation = self.minmax_a_b(depth - 1, not maximising, alpha, beta)
+                self.unmakeMove()
+                max_eval = max(max_eval, evaluation)
+                alpha = max(max_eval, alpha)
+                if beta <= alpha:
+                    break
+            return max_eval
+        else:
+            min_eval = 99999
+            for move in self.generate_legal_moves():
+                self.makeMove(move)
+                evaluation = self.minmax_a_b(depth - 1, not maximising, alpha, beta)
+                self.unmakeMove()
+                min_eval = min(min_eval, evaluation)
+                beta = min(min_eval, beta)
+                if alpha <= beta:
+                    break
+            return min_eval
+
+    def search_moves(self) -> Move:
+        maximising = True if self.SideToPlay is Side.WHITE else False
+        current_eval = -99999 if maximising else 99999
+        best_move = None
+        for move in self.generate_legal_moves():
+            self.makeMove(move)
+            evaluation = self.minmax_a_b(3, maximising, -99999, 99999)
+            self.unmakeMove()
+            print(evaluation)
+            if maximising:
+                if current_eval < evaluation:
+                    best_move = move
+                    current_eval = evaluation
+            else:
+                if current_eval > evaluation:
+                    best_move = move
+                    current_eval = evaluation
+        return best_move
