@@ -97,20 +97,3 @@ if __name__ == "__main__":
             exit=True
 
         pygame.display.update()
-
-    # while not instance.checkmated:
-
-    #     print("\nTotal amount of moves:", total)
-
-    #     toMake = input("Enter your move: ")
-
-    #     if toMake == "-1":
-    #         instance.unmakeMove()
-    #         continue
-
-    #     # Check if move in allowed moves list
-    #     if toMake not in rf_moves:
-    #         # if not in the list, ask for move again by skipping make move logic
-    #         continue
-
-    #     instance.makeMove(all_moves[rf_moves.index(toMake)])
