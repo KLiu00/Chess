@@ -1,3 +1,4 @@
+import random
 from Enums.SideEnum import SideEnum as Side
 from Enums.PieceEnum import PieceEnum as PieceType
 from Move import Move, CastleMove
@@ -85,14 +86,7 @@ class ChessEngine:
     # Makes a move on the board and returns whether the operation failed or succeeded.
     def makeMove(self, move: Move) -> bool:
         initialCell = self.board[move.startPosition]
-        finalCell = self.board[move.endPosition]
-        takingPiece = False if finalCell is None else True
         # Selected nothing to move
-        if initialCell is None:
-            return False
-        # Attempting to take self piece
-        if takingPiece and initialCell.side == finalCell.side:
-            return False
         self.board[move.startPosition] = None
         self.board[move.capturedPiecePosition] = None
         self.board[move.endPosition] = initialCell
@@ -100,6 +94,9 @@ class ChessEngine:
             self.board[move.rook_start_position] = None
             self.board[move.rook_end_position] = move.rook_piece
             move.rook_piece.hasMoved = True
+            self.__MoveHistory.push(move)
+            self.switchSide()
+            return True
         # Add move onto the move history.
         self.__MoveHistory.push(move)
         self.board[move.endPosition].hasMoved = True
@@ -380,7 +377,6 @@ class ChessEngine:
         moves.extend(self.castling_moves())
 
         return moves
-    
 
     def minmax(self, depth, maximising):
         if depth == 0 or self.checkmated:
@@ -433,18 +429,23 @@ class ChessEngine:
     def search_moves(self) -> Move:
         maximising = True if self.SideToPlay is Side.WHITE else False
         current_eval = -99999 if maximising else 99999
-        best_move = None
+        best_moves = []
         for move in self.generate_legal_moves():
             self.makeMove(move)
-            evaluation = self.minmax_a_b(3, maximising, -99999, 99999)
+            evaluation = self.minmax_a_b(2, not maximising, -99999, 99999)
             self.unmakeMove()
             print(evaluation)
             if maximising:
                 if current_eval < evaluation:
-                    best_move = move
+                    del best_moves[:]
+                    best_moves.append(move)
                     current_eval = evaluation
             else:
                 if current_eval > evaluation:
-                    best_move = move
+                    del best_moves[:]
+                    best_moves.append(move)
                     current_eval = evaluation
-        return best_move
+            if evaluation == current_eval:
+                best_moves.append(move)
+        print(f"Best evaluation: {current_eval}")
+        return random.choice(best_moves)
