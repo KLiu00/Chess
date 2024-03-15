@@ -8,7 +8,7 @@ piece_worth = {
     PieceType.KNIGHT: 3,
     PieceType.ROOK: 5,
     PieceType.QUEEN: 10,
-    PieceType.KING: 90
+    PieceType.KING: 900
 }
 
 piece_tables = {
@@ -87,5 +87,5 @@ def evaluate_board(board: list[IPiece]):
     for i, cell in enumerate(board):
         if cell is None:
             continue
-        total_worth += piece_worth[cell.pieceType] + generate_piece_location_worth(cell.side, cell.pieceType, i)
+        total_worth += (piece_worth[cell.pieceType] + generate_piece_location_worth(cell.side, cell.pieceType, i)) * (1 if cell.side is Side.WHITE else -1)
     return total_worth
