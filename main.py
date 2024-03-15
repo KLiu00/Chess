@@ -38,8 +38,10 @@ def draw_board(canvas, board):
 if __name__ == "__main__":
     instance = Chess()
     pygame.init()
+    pygame.mixer.init()
+    pygame.mixer.music.load("move.mp3")
 
-    canvas_size = 1024
+    canvas_size = 512
     pixel_size = canvas_size // 8
     canvas = pygame.display.set_mode((canvas_size, canvas_size))
 
@@ -53,8 +55,12 @@ if __name__ == "__main__":
     while not exit:
         for event in pygame.event.get():
             if instance.SideToPlay is SideEnum.BLACK:
-                instance.makeMove(instance.search_moves())
+                move = instance.search_moves()
+                instance.makeMove(move)
                 draw_board(canvas, instance.board)
+                pygame.draw.rect(canvas, (255,0,0), draw_square(pixel_size, move.startPosition), 5)
+                pygame.draw.rect(canvas, (255,0,0), draw_square(pixel_size, move.endPosition), 5)
+                pygame.mixer.music.play()
             current_mouse_location = pygame.mouse.get_pos()
 
             if event.type is pygame.QUIT:
@@ -85,6 +91,7 @@ if __name__ == "__main__":
                     continue
                 instance.makeMove(all_moves[rf_moves.index(toMake)])
                 draw_board(canvas, instance.board)
+                pygame.mixer.music.play()
                 print(instance.displayBoard())
         if instance.checkmated:
             exit=True
