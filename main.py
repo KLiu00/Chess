@@ -85,7 +85,7 @@ if __name__ == "__main__":
                 for move in all_moves:
                     total += 1
                     rf_moves.append(
-                        f"{indexToRF(move.startPosition)}{indexToRF(move.endPosition)}"
+                        f"{move.startRf}{move.endRf}"
                     )
                 if toMake not in rf_moves:
                     continue
