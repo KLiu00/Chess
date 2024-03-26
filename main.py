@@ -4,6 +4,8 @@ from ChessUtility import indexToRF, rfToIndex
 from Enums.PieceEnum import PieceEnum
 from Enums.SideEnum import SideEnum
 
+import os
+
 
 def get_board_index(x, y):
     column = x // pixel_size
@@ -29,40 +31,30 @@ def draw_board(canvas, board):
         squares.append(ays)
 
     for i, square in enumerate(squares):
-        text = str(board[i]) if board[i] is not None else ""
+        if board[i] is None:
+            continue
         canvas.blit(
-            pygame.font.SysFont("Arial", 25).render(text, True, (0, 0, 0)), square
+            pygame.PIECE_IMAGES[str(board[i])], square
         )
 
 
-if __name__ == "__main__":
-    instance = Chess()
-    pygame.init()
-    pygame.mixer.init()
-    pygame.mixer.music.load("move.mp3")
-
-    canvas_size = 512
-    pixel_size = canvas_size // 8
-    canvas = pygame.display.set_mode((canvas_size, canvas_size))
-
-    pygame.display.set_caption("CHESS")
+def player_vs_computer(canvas):
     exit = False
-
-    previous_pressed_state = False
+    instance = Chess()
     start_pressed_board_position = 0
     draw_board(canvas, instance.board)
-
     while not exit:
         for event in pygame.event.get():
             if instance.SideToPlay is SideEnum.BLACK:
                 move = instance.search_moves()
                 instance.makeMove(move)
                 draw_board(canvas, instance.board)
-                pygame.draw.rect(canvas, (255,0,0), draw_square(pixel_size, move.startPosition), 5)
-                pygame.draw.rect(canvas, (255,0,0), draw_square(pixel_size, move.endPosition), 5)
+                pygame.draw.rect(canvas, (255, 0, 0), draw_square(
+                    pixel_size, move.startPosition), 5)
+                pygame.draw.rect(canvas, (255, 0, 0), draw_square(
+                    pixel_size, move.endPosition), 5)
                 pygame.mixer.music.play()
             current_mouse_location = pygame.mouse.get_pos()
-
             if event.type is pygame.QUIT:
                 exit = True
             if event.type == pygame.MOUSEBUTTONDOWN:
@@ -72,7 +64,8 @@ if __name__ == "__main__":
                 all_moves = instance.generate_legal_moves()
                 for moves in all_moves:
                     if moves.startPosition is start_pressed_board_position:
-                        pygame.draw.rect(canvas, (0,255,0), draw_square(pixel_size, moves.endPosition), 5)
+                        pygame.draw.rect(canvas, (0, 255, 0), draw_square(
+                            pixel_size, moves.endPosition), 5)
             if event.type == pygame.MOUSEBUTTONUP:
                 draw_board(canvas, instance.board)
                 current_board_position = get_board_index(
@@ -94,6 +87,33 @@ if __name__ == "__main__":
                 pygame.mixer.music.play()
                 print(instance.displayBoard())
         if instance.checkmated:
-            exit=True
-
+            exit = True
         pygame.display.update()
+
+def load_images(store):
+    images = os.listdir("piece_images/")
+    for image in images:
+        loaded_image = pygame.image.load(os.path.join("piece_images", image))
+        refined_image = pygame.transform.scale(
+            loaded_image, (canvas_size//8, canvas_size//8))
+        store[image[0:2]] = refined_image
+
+
+
+if __name__ == "__main__":
+    
+    pygame.init()
+    pygame.mixer.init()
+    pygame.mixer.music.load("move.mp3")
+    pygame.PIECE_IMAGES = {}
+
+    canvas_size = 512
+    pixel_size = canvas_size // 8
+    canvas = pygame.display.set_mode((canvas_size, canvas_size))
+    load_images(pygame.PIECE_IMAGES)
+    print(pygame.PIECE_IMAGES)
+
+    pygame.display.set_caption("CHESS")
+    player_vs_computer(canvas)
+
+

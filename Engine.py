@@ -53,10 +53,11 @@ class ChessEngine:
         #     None, None, None, None, None, None, None, None,
         #     None, None, None, None, None, None, None, None,
         #     None, None, None, None, None, None, None, None,
-        #     None, None, None, None, None, Pawn(Side.BLACK), None, None,
+        #     None, None, Queen(Side.BLACK), None, None, Pawn(
+        #         Side.BLACK), None, None,
         #     None, None, None, None, None, None, None, None,
         #     None, None, None, None, Pawn(Side.WHITE), None, None, None,
-        #     Rook(Side.WHITE), None, None, None, King(Side.WHITE), None, None, Rook(Side.WHITE),
+        #     Rook(Side.WHITE), None, None, None, None, King(Side.WHITE), None, Rook(Side.WHITE),
         # ]
 
         return board
@@ -165,13 +166,30 @@ class ChessEngine:
                 if includeContact:
                     move = Move(boardIndex, nextIndex, copy(self.board[boardIndex]), copy(nextCell))
                     locations.append(move)
-                break
+                    if xray:
+                        xray = False
+                        currentIndex = nextIndex
+                        lifespan -= 1
+                        continue
+                
+                if not xray:
+                    break
 
             move = Move(boardIndex, nextIndex, copy(self.board[boardIndex]), copy(nextCell))
             locations.append(move)
             currentIndex = nextIndex
             lifespan -= 1
         return locations
+    
+    # returns attacked piece, attacking piece (pinned piece, pinning piece)
+    def get_xray_piece(self, board_index: int , direction: int):
+        moves = self.raycast(board_index, direction, True, xray=True)
+        
+        pieces = []
+        for move in moves:
+            if move.capturedPieceMoved is not None:
+                pieces.append(move.endPosition)
+        return pieces
 
     # Generates a list of indexes on the board the piece can go
     def generate_rook_moves(self, boardIndex: int):
@@ -282,13 +300,18 @@ class ChessEngine:
 
         return moves
 
-    def is_attacked(self, moves: list[Move] = [], board_indexes: list[int] = [], attacking_piece_board_index: list[int] = []) -> bool:
+    def is_attacked(self, board_indexes: list[int], moves: list[Move] = [],  attacking_piece_board_index: list[int] = []) -> bool:
         states: list[bool] = []
         if len(moves) == 0:
             moves = self.generate_all_moves(Side.BLACK if self.SideToPlay is Side.WHITE else Side.WHITE)
         move_indexes = [move.capturedPiecePosition for move in moves]
+        move_attacker = [move.pieceMoved for move in moves]
         for index in board_indexes:
-            states.append(index in move_indexes)   
+            if index in move_indexes:
+                states.append(True)
+                attacking_piece_board_index.append(move_attacker[move_indexes.index(index)])
+            else:
+                states.append(False)
         return states
 
     def in_check(self, king_position: int = None) -> bool:
@@ -372,11 +395,54 @@ class ChessEngine:
 
         return moves
 
+
     def generate_legal_moves(self) -> list[Move]:
         moves: list[Move] = self.generate_all_moves(self.SideToPlay)
         moves.extend(self.castling_moves())
 
-        return moves
+        # validated_moves = []
+
+        # # if in check, can only move king / a piece to block the check or take the attacking piece
+        # if self.in_check():
+        #     pass
+
+        # #pins
+        # kings = self.getPieces(PieceType.KING, self.SideToPlay)
+        # if len(kings) == 0:
+        #     return []
+        # king: list[tuple[IPiece, int]] = kings[0]
+
+        # king_piece, king_position = king
+        # for direction in self.__VerticalMovement + self.__HorizontalMovement + self.__DiagonalMovement:
+        #     piece_list = self.get_xray_piece(king_position, direction)
+        #     if len(piece_list) < 2:
+        #         continue
+
+        #     first_index, second_index = piece_list
+
+        #     first_piece: IPiece = self.board[first_index]
+        #     second_piece: IPiece = self.board[second_index]
+            
+        #     # checks if the potentially pinned piece is on the same team
+        #     if first_piece.side is not self.SideToPlay:
+        #         continue
+
+        #     # checks if the pinning piece is an enemy piece
+        #     if second_piece.side is self.SideToPlay:
+        #         continue
+            
+        #     if second_piece.pieceType in [PieceType.QUEEN, PieceType.ROOK, PieceType.BISHOP]:
+        #         first_piece_allowed_indexes = [*range(first_index, second_index, direction)]
+        #         first_piece_allowed_indexes = first_piece_allowed_indexes[1:]
+        #         first_piece_allowed_indexes.append(second_index)
+
+        #         valid_moves_for_pinned_piece = [
+        #             move for move in moves if move.to_index in first_piece_allowed_indexes]
+        #         validated_moves.extend(valid_moves_for_pinned_piece)
+        
+        # # remove moves which are not allowed from moves
+        # #...
+        return validated_moves
 
     def minmax(self, depth, maximising):
         if depth == 0 or self.checkmated:
@@ -432,7 +498,7 @@ class ChessEngine:
         best_moves = []
         for move in self.generate_legal_moves():
             self.makeMove(move)
-            evaluation = self.minmax_a_b(2, not maximising, -99999, 99999)
+            evaluation = self.minmax_a_b(3, not maximising, -99999, 99999)
             self.unmakeMove()
             print(evaluation)
             if maximising:
