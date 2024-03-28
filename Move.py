@@ -11,7 +11,7 @@ class Move:
         self.capturedPiecePosition = capturedPiecePosition if capturedPiecePosition != 0 else endPosition
 
         self.startRf = indexToRF(self.startPosition)
-        self.endRf = indexToRF(self.capturedPiecePosition)
+        self.endRf = indexToRF(self.endPosition)
 
 class CastleMove(Move):
     def __init__(self, king_position: int, rook_position: int, king_piece: IPiece, rook_piece: IPiece, king_end_position, rook_end_position) -> None:

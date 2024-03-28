@@ -442,28 +442,7 @@ class ChessEngine:
         
         # # remove moves which are not allowed from moves
         # #...
-        return validated_moves
-
-    def minmax(self, depth, maximising):
-        if depth == 0 or self.checkmated:
-            return evaluate_board(self.board)
-
-        if maximising:
-            max_eval = -99999
-            for move in self.generate_legal_moves():
-                self.makeMove(move)
-                evaluation = self.minmax(depth - 1, not maximising)
-                self.unmakeMove()
-                max_eval = max(max_eval, evaluation)
-            return max_eval
-        else:
-            min_eval = 99999
-            for move in self.generate_legal_moves():
-                self.makeMove(move)
-                evaluation = self.minmax(depth - 1, not maximising)
-                self.unmakeMove()
-                min_eval = min(min_eval, evaluation)
-            return min_eval
+        return moves
 
     def minmax_a_b(self, depth, maximising, alpha, beta):
         if depth == 0 or self.checkmated:
@@ -498,7 +477,7 @@ class ChessEngine:
         best_moves = []
         for move in self.generate_legal_moves():
             self.makeMove(move)
-            evaluation = self.minmax_a_b(3, not maximising, -99999, 99999)
+            evaluation = self.minmax_a_b(2, not maximising, -99999, 99999)
             self.unmakeMove()
             print(evaluation)
             if maximising:
