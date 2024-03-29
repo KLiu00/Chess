@@ -48,17 +48,17 @@ class ChessEngine:
             King(Side.WHITE), Bishop(Side.WHITE), Knight(Side.WHITE), Rook(Side.WHITE)
         ]
 
-        # board = [
-        #     King(Side.BLACK), None, None, None, None, None, None, None,
-        #     None, None, None, None, None, None, None, None,
-        #     None, None, None, None, None, None, None, None,
-        #     None, None, None, None, None, None, None, None,
-        #     None, None, Queen(Side.BLACK), None, None, Pawn(
-        #         Side.BLACK), None, None,
-        #     None, None, None, None, None, None, None, None,
-        #     None, None, None, None, Pawn(Side.WHITE), None, None, None,
-        #     Rook(Side.WHITE), None, None, None, None, King(Side.WHITE), None, Rook(Side.WHITE),
-        # ]
+        board = [
+            King(Side.BLACK), None, None, None, None, None, None, None,
+            None, None, None, None, None, None, None, None,
+            None, None, None, None, None, None, None, None,
+            None, None, None, None, None, None, None, None,
+            None, None, Queen(Side.BLACK), None, None, Pawn(
+                Side.BLACK), None, None,
+            None, None, None, None, None, None, None, None,
+            None, None, None, None, Pawn(Side.WHITE), None, None, None,
+            Rook(Side.WHITE), None, None, None, None, King(Side.WHITE), None, Rook(Side.WHITE),
+        ]
 
         return board
 
@@ -400,49 +400,53 @@ class ChessEngine:
         moves: list[Move] = self.generate_all_moves(self.SideToPlay)
         moves.extend(self.castling_moves())
 
-        # validated_moves = []
+        restrictions = {}
+        validated_moves = []
 
-        # # if in check, can only move king / a piece to block the check or take the attacking piece
-        # if self.in_check():
-        #     pass
+        # if in check, can only move king / a piece to block the check or take the attacking piece
+        if self.in_check():
+            pass
 
-        # #pins
-        # kings = self.getPieces(PieceType.KING, self.SideToPlay)
-        # if len(kings) == 0:
-        #     return []
-        # king: list[tuple[IPiece, int]] = kings[0]
+        #pins
+        kings = self.getPieces(PieceType.KING, self.SideToPlay)
+        if len(kings) == 0:
+            return []
+        king: list[tuple[IPiece, int]] = kings[0]
 
-        # king_piece, king_position = king
-        # for direction in self.__VerticalMovement + self.__HorizontalMovement + self.__DiagonalMovement:
-        #     piece_list = self.get_xray_piece(king_position, direction)
-        #     if len(piece_list) < 2:
-        #         continue
+        king_piece, king_position = king
+        for direction in self.__VerticalMovement + self.__HorizontalMovement + self.__DiagonalMovement:
+            piece_list = self.get_xray_piece(king_position, direction)
+            if len(piece_list) < 2:
+                continue
 
-        #     first_index, second_index = piece_list
+            first_index, second_index = piece_list
 
-        #     first_piece: IPiece = self.board[first_index]
-        #     second_piece: IPiece = self.board[second_index]
+            first_piece: IPiece = self.board[first_index]
+            second_piece: IPiece = self.board[second_index]
             
-        #     # checks if the potentially pinned piece is on the same team
-        #     if first_piece.side is not self.SideToPlay:
-        #         continue
+            # checks if the potentially pinned piece is on the same team
+            if first_piece.side is not self.SideToPlay:
+                continue
 
-        #     # checks if the pinning piece is an enemy piece
-        #     if second_piece.side is self.SideToPlay:
-        #         continue
+            # checks if the pinning piece is an enemy piece
+            if second_piece.side is self.SideToPlay:
+                continue
             
-        #     if second_piece.pieceType in [PieceType.QUEEN, PieceType.ROOK, PieceType.BISHOP]:
-        #         first_piece_allowed_indexes = [*range(first_index, second_index, direction)]
-        #         first_piece_allowed_indexes = first_piece_allowed_indexes[1:]
-        #         first_piece_allowed_indexes.append(second_index)
+            if second_piece.pieceType in [PieceType.QUEEN, PieceType.ROOK, PieceType.BISHOP]:
+                first_piece_allowed_indexes = [*range(first_index, second_index, direction)]
+                first_piece_allowed_indexes = first_piece_allowed_indexes[1:]
+                first_piece_allowed_indexes.append(second_index)
+                restrictions[first_index] = first_piece_allowed_indexes
 
-        #         valid_moves_for_pinned_piece = [
-        #             move for move in moves if move.to_index in first_piece_allowed_indexes]
-        #         validated_moves.extend(valid_moves_for_pinned_piece)
-        
-        # # remove moves which are not allowed from moves
-        # #...
-        return moves
+        print(restrictions)
+        for move in moves:
+            if move.startPosition not in restrictions:
+                validated_moves.append(move)
+            else:
+                if move.endPosition in restrictions[move.startPosition]:
+                    validated_moves.append(move)
+
+        return validated_moves
 
     def minmax_a_b(self, depth, maximising, alpha, beta):
         if depth == 0 or self.checkmated:
