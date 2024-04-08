@@ -90,6 +90,49 @@ def player_vs_computer(canvas):
             exit = True
         pygame.display.update()
 
+def player_vs_player(canvas):
+    exit = False
+    instance = Chess()
+    start_pressed_board_position = 0
+    draw_board(canvas, instance.board)
+    while not exit:
+        for event in pygame.event.get():
+            current_mouse_location = pygame.mouse.get_pos()
+            if event.type is pygame.QUIT:
+                exit = True
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                start_pressed_board_position = get_board_index(
+                    current_mouse_location[0], current_mouse_location[1]
+                )
+                all_moves = instance.generate_legal_moves()
+                for moves in all_moves:
+                    if moves.startPosition is start_pressed_board_position:
+                        pygame.draw.rect(canvas, (0, 255, 0), draw_square(
+                            pixel_size, moves.endPosition), 5)
+            if event.type == pygame.MOUSEBUTTONUP:
+                draw_board(canvas, instance.board)
+                current_board_position = get_board_index(
+                    current_mouse_location[0], current_mouse_location[1]
+                )
+                toMake = f"{indexToRF(start_pressed_board_position)}{indexToRF(current_board_position)}"
+                all_moves = instance.generate_legal_moves()
+                rf_moves = []
+                total = 0
+                for move in all_moves:
+                    total += 1
+                    rf_moves.append(
+                        f"{move.startRf}{move.endRf}"
+                    )
+                if toMake not in rf_moves:
+                    continue
+                instance.makeMove(all_moves[rf_moves.index(toMake)])
+                draw_board(canvas, instance.board)
+                pygame.mixer.music.play()
+                print(instance.displayBoard())
+        if instance.checkmated:
+            exit = True
+        pygame.display.update()
+
 def load_images(store):
     images = os.listdir("piece_images/")
     for image in images:
@@ -98,7 +141,31 @@ def load_images(store):
             loaded_image, (canvas_size//8, canvas_size//8))
         store[image[0:2]] = refined_image
 
-
+def draw_menu(canvas):
+    running = True
+    while running:
+        canvas.fill((255,255,255))
+        pygame.draw.rect(canvas, (0, 0, 0), draw_square(
+            pixel_size, 19), 2)
+        pygame.draw.rect(canvas, (0, 0, 0), draw_square(
+            pixel_size, 20), 2)
+        pygame.draw.rect(canvas, (0, 0, 0), draw_square(
+            pixel_size, 21), 2)
+        for event in pygame.event.get():
+            current_mouse_location = pygame.mouse.get_pos()
+            if event.type == pygame.QUIT: 
+                running = False
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                start_pressed_board_position = get_board_index(
+                    current_mouse_location[0], current_mouse_location[1]
+                )
+                if start_pressed_board_position == 19:
+                    player_vs_player(canvas)
+                elif start_pressed_board_position == 20:
+                    player_vs_computer(canvas)
+                elif start_pressed_board_position == 21:
+                    running=False
+        pygame.display.update()
 
 if __name__ == "__main__":
     
@@ -114,6 +181,6 @@ if __name__ == "__main__":
     print(pygame.PIECE_IMAGES)
 
     pygame.display.set_caption("CHESS")
-    player_vs_computer(canvas)
+    draw_menu(canvas)
 
 
