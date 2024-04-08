@@ -48,17 +48,17 @@ class ChessEngine:
             King(Side.WHITE), Bishop(Side.WHITE), Knight(Side.WHITE), Rook(Side.WHITE)
         ]
 
-        board = [
-            King(Side.BLACK), None, None, None, None, None, None, None,
-            None, None, None, None, None, None, None, None,
-            None, None, None, None, None, None, None, None,
-            None, None, None, None, None, None, None, None,
-            None, None, Queen(Side.BLACK), None, None, Pawn(
-                Side.BLACK), None, None,
-            None, None, None, None, None, None, None, None,
-            None, None, None, None, Pawn(Side.WHITE), None, None, None,
-            Rook(Side.WHITE), None, None, None, None, King(Side.WHITE), None, Rook(Side.WHITE),
-        ]
+        # board = [
+        #     King(Side.BLACK), None, None, None, None, None, None, None,
+        #     None, None, None, None, None, None, None, None,
+        #     None, None, None, None, None, None, None, None,
+        #     None, None, None, None, None, None, None, None,
+        #     None, None, Queen(Side.BLACK), None, None, Pawn(
+        #         Side.BLACK), None, None,
+        #     None, None, None, None, None, None, None, None,
+        #     None, None, None, None, Pawn(Side.WHITE), None, None, None,
+        #     Rook(Side.WHITE), None, None, None, None, King(Side.WHITE), None, Rook(Side.WHITE),
+        # ]
 
         return board
 
@@ -438,7 +438,6 @@ class ChessEngine:
                 first_piece_allowed_indexes.append(second_index)
                 restrictions[first_index] = first_piece_allowed_indexes
 
-        print(restrictions)
         for move in moves:
             if move.startPosition not in restrictions:
                 validated_moves.append(move)
