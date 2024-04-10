@@ -2,6 +2,7 @@ import pygame
 from Engine import ChessEngine as Chess
 from ChessUtility import indexToRF, rfToIndex
 from Enums.PieceEnum import PieceEnum
+from Move import Move
 from Enums.SideEnum import SideEnum
 
 import os
@@ -133,6 +134,35 @@ def player_vs_player(canvas):
             exit = True
         pygame.display.update()
 
+def practice_mode(canvas):
+    exit = False
+    instance = Chess()
+    start_pressed_board_position = 0
+    draw_board(canvas, instance.board)
+    while not exit:
+        for event in pygame.event.get():
+            current_mouse_location = pygame.mouse.get_pos()
+            if event.type is pygame.QUIT:
+                exit = True
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                start_pressed_board_position = get_board_index(
+                    current_mouse_location[0], current_mouse_location[1]
+                )
+            if event.type == pygame.MOUSEBUTTONUP:
+                draw_board(canvas, instance.board)
+                current_board_position = get_board_index(
+                    current_mouse_location[0], current_mouse_location[1]
+                )
+                if instance.board[start_pressed_board_position] is None:
+                    continue
+                instance.makeMove(Move(start_pressed_board_position, current_board_position, instance.board[start_pressed_board_position], instance.board[current_board_position]))
+                draw_board(canvas, instance.board)
+                pygame.mixer.music.play()
+                print(instance.displayBoard())
+        if instance.checkmated:
+            exit = True
+        pygame.display.update()
+
 def load_images(store):
     images = os.listdir("piece_images/")
     for image in images:
@@ -151,6 +181,8 @@ def draw_menu(canvas):
             pixel_size, 20), 2)
         pygame.draw.rect(canvas, (0, 0, 0), draw_square(
             pixel_size, 21), 2)
+        pygame.draw.rect(canvas, (0, 0, 0), draw_square(
+            pixel_size, 22), 2)
         for event in pygame.event.get():
             current_mouse_location = pygame.mouse.get_pos()
             if event.type == pygame.QUIT: 
@@ -164,6 +196,8 @@ def draw_menu(canvas):
                 elif start_pressed_board_position == 20:
                     player_vs_computer(canvas)
                 elif start_pressed_board_position == 21:
+                    practice_mode(canvas)
+                elif start_pressed_board_position == 22:
                     running=False
         pygame.display.update()
 

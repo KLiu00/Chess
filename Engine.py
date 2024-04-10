@@ -86,24 +86,27 @@ class ChessEngine:
 
     # Makes a move on the board and returns whether the operation failed or succeeded.
     def makeMove(self, move: Move) -> bool:
-        initialCell = self.board[move.startPosition]
-        # Selected nothing to move
-        self.board[move.startPosition] = None
-        self.board[move.capturedPiecePosition] = None
-        self.board[move.endPosition] = initialCell
-        if isinstance(move, CastleMove):
-            self.board[move.rook_start_position] = None
-            self.board[move.rook_end_position] = move.rook_piece
-            move.rook_piece.hasMoved = True
+        try:
+            initialCell = self.board[move.startPosition]
+            # Selected nothing to move
+            self.board[move.startPosition] = None
+            self.board[move.capturedPiecePosition] = None
+            self.board[move.endPosition] = initialCell
+            if isinstance(move, CastleMove):
+                self.board[move.rook_start_position] = None
+                self.board[move.rook_end_position] = move.rook_piece
+                move.rook_piece.hasMoved = True
+                self.__MoveHistory.push(move)
+                self.switchSide()
+                return True
+            # Add move onto the move history.
             self.__MoveHistory.push(move)
+            self.board[move.endPosition].hasMoved = True
+            # Switch playing sides
             self.switchSide()
             return True
-        # Add move onto the move history.
-        self.__MoveHistory.push(move)
-        self.board[move.endPosition].hasMoved = True
-        # Switch playing sides
-        self.switchSide()
-        return True
+        except:
+            return False
 
     def unmakeMove(self) -> bool:
         # Check if move history is empty
@@ -297,6 +300,8 @@ class ChessEngine:
                     if abs((mostRecentMove.endPosition % 8) - (boardIndex % 8)) == 1 and abs(mostRecentMove.startPosition - mostRecentMove.endPosition) // 8 == 2:
                         a = Move(boardIndex,mostRecentMove.endPosition + 8 * sideMultiplier, copy(self.board[boardIndex]), mostRecentMove.pieceMoved, mostRecentMove.endPosition)
                         moves.append(a)
+        
+        # Promotion
 
         return moves
 
@@ -398,6 +403,7 @@ class ChessEngine:
 
     def generate_legal_moves(self) -> list[Move]:
         moves: list[Move] = self.generate_all_moves(self.SideToPlay)
+        
         moves.extend(self.castling_moves())
 
         restrictions = {}
