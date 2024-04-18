@@ -48,17 +48,17 @@ class ChessEngine:
             King(Side.WHITE), Bishop(Side.WHITE), Knight(Side.WHITE), Rook(Side.WHITE)
         ]
 
-        # board = [
-        #     King(Side.BLACK), None, None, None, None, None, None, None,
-        #     None, None, None, None, None, None, None, None,
-        #     None, None, None, None, None, None, None, None,
-        #     None, None, None, None, None, None, None, None,
-        #     None, None, Queen(Side.BLACK), None, None, Pawn(
-        #         Side.BLACK), None, None,
-        #     None, None, None, None, None, None, None, None,
-        #     None, None, None, None, Pawn(Side.WHITE), None, None, None,
-        #     Rook(Side.WHITE), None, None, None, None, King(Side.WHITE), None, Rook(Side.WHITE),
-        # ]
+        board = [
+            King(Side.BLACK), None, None, None, Rook(Side.BLACK), None, None, None,
+            None, None, None, None, Bishop(Side.BLACK), None, None, None,
+            None, None, None, None, Rook(Side.WHITE), None, None, None,
+            None, None, None, None, None, None, None, None,
+            None, None, Queen(Side.BLACK), None, None, Pawn(
+                Side.BLACK), None, None,
+            None, None, None, None, None, None, None, None,
+            None, None, None, None, None, None, None, None,
+            None, None, None, None, King(Side.WHITE), None, None, Rook(Side.WHITE),
+        ]
 
         return board
 
@@ -400,6 +400,12 @@ class ChessEngine:
 
         return moves
 
+    def in_checkmate(self, king_position: int = None) -> bool:
+        if king_position is None:
+            king = self.getPieces(PieceType.KING, self.SideToPlay)[0][0]
+        else:
+            king = king_position
+        return self.is_attacked(board_indexes=[king])[0] and len(self.generate_legal_moves()) == 0
 
     def generate_legal_moves(self) -> list[Move]:
         moves: list[Move] = self.generate_all_moves(self.SideToPlay)
@@ -409,8 +415,14 @@ class ChessEngine:
         restrictions = {}
         validated_moves = []
 
+        for move in moves:
+            if move.capturedPieceMoved is None:
+                continue
+            if move.capturedPieceMoved.pieceType is PieceType.KING:
+                moves.remove(move)
         # if in check, can only move king / a piece to block the check or take the attacking piece
         if self.in_check():
+            print("yoyooy")
             pass
 
         #pins
@@ -420,7 +432,7 @@ class ChessEngine:
         king: list[tuple[IPiece, int]] = kings[0]
 
         king_piece, king_position = king
-        for direction in self.__VerticalMovement + self.__HorizontalMovement + self.__DiagonalMovement:
+        for direction in self.__VerticalMovement + self.__HorizontalMovement:
             piece_list = self.get_xray_piece(king_position, direction)
             if len(piece_list) < 2:
                 continue
@@ -438,7 +450,31 @@ class ChessEngine:
             if second_piece.side is self.SideToPlay:
                 continue
             
-            if second_piece.pieceType in [PieceType.QUEEN, PieceType.ROOK, PieceType.BISHOP]:
+            if second_piece.pieceType in [PieceType.QUEEN, PieceType.ROOK]:
+                first_piece_allowed_indexes = [*range(first_index, second_index, direction)]
+                first_piece_allowed_indexes = first_piece_allowed_indexes[1:]
+                first_piece_allowed_indexes.append(second_index)
+                restrictions[first_index] = first_piece_allowed_indexes
+
+        for direction in self.__HorizontalMovement:
+            piece_list = self.get_xray_piece(king_position, direction)
+            if len(piece_list) < 2:
+                continue
+
+            first_index, second_index = piece_list
+
+            first_piece: IPiece = self.board[first_index]
+            second_piece: IPiece = self.board[second_index]
+            
+            # checks if the potentially pinned piece is on the same team
+            if first_piece.side is not self.SideToPlay:
+                continue
+
+            # checks if the pinning piece is an enemy piece
+            if second_piece.side is self.SideToPlay:
+                continue
+            
+            if second_piece.pieceType in [PieceType.QUEEN, PieceType.BISHOP]:
                 first_piece_allowed_indexes = [*range(first_index, second_index, direction)]
                 first_piece_allowed_indexes = first_piece_allowed_indexes[1:]
                 first_piece_allowed_indexes.append(second_index)
