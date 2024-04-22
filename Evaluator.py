@@ -87,5 +87,5 @@ def evaluate_board(board: list[IPiece]):
     for i, cell in enumerate(board):
         if cell is None:
             continue
-        total_worth += (piece_worth[cell.pieceType] + generate_piece_location_worth(cell.side, cell.pieceType, i)) * (1 if cell.side is Side.WHITE else -1)
+        total_worth += (piece_worth[cell.pieceType]) * (1 if cell.side is Side.WHITE else -1) #+ generate_piece_location_worth(cell.side, cell.pieceType, i)) 
     return total_worth

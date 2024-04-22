@@ -86,7 +86,6 @@ def player_vs_computer(canvas):
                 instance.makeMove(all_moves[rf_moves.index(toMake)])
                 draw_board(canvas, instance.board)
                 pygame.mixer.music.play()
-                print(instance.displayBoard())
         if instance.checkmated:
             exit = True
         pygame.display.update()
@@ -129,7 +128,6 @@ def player_vs_player(canvas):
                 instance.makeMove(all_moves[rf_moves.index(toMake)])
                 draw_board(canvas, instance.board)
                 pygame.mixer.music.play()
-                print(instance.displayBoard())
         if instance.checkmated:
             exit = True
         pygame.display.update()
@@ -137,7 +135,7 @@ def player_vs_player(canvas):
 def practice_mode(canvas):
     exit = False
     instance = Chess()
-    start_pressed_board_position = 0
+    start_pressed_board_position = -1
     draw_board(canvas, instance.board)
     while not exit:
         for event in pygame.event.get():
@@ -153,12 +151,11 @@ def practice_mode(canvas):
                 current_board_position = get_board_index(
                     current_mouse_location[0], current_mouse_location[1]
                 )
-                if instance.board[start_pressed_board_position] is None:
+                if start_pressed_board_position == -1 or instance.board[start_pressed_board_position] is None:
                     continue
                 instance.makeMove(Move(start_pressed_board_position, current_board_position, instance.board[start_pressed_board_position], instance.board[current_board_position]))
                 draw_board(canvas, instance.board)
                 pygame.mixer.music.play()
-                print(instance.displayBoard())
         if instance.checkmated:
             exit = True
         pygame.display.update()
@@ -175,22 +172,32 @@ def draw_menu(canvas):
     running = True
     while running:
         canvas.fill((255,255,255))
-        pygame.draw.rect(canvas, (0, 0, 0), draw_square(
+        pvp_square = pygame.draw.rect(canvas, (0, 0, 0), draw_square(
             pixel_size, 19), 2)
-        pygame.draw.rect(canvas, (0, 0, 0), draw_square(
+        pvai_square = pygame.draw.rect(canvas, (0, 0, 0), draw_square(
             pixel_size, 20), 2)
-        pygame.draw.rect(canvas, (0, 0, 0), draw_square(
+        practice_square = pygame.draw.rect(canvas, (0, 0, 0), draw_square(
             pixel_size, 21), 2)
-        pygame.draw.rect(canvas, (0, 0, 0), draw_square(
+        quit_square = pygame.draw.rect(canvas, (0, 0, 0), draw_square(
             pixel_size, 22), 2)
+        canvas.blit(pygame.TEXT_FONT.render("PvP", True, (0, 0, 0)),
+                    (pvp_square.left, pvp_square.top))
+        canvas.blit(pygame.TEXT_FONT.render("PvAI", True, (0, 0, 0)),
+                    (pvai_square.left, pvai_square.top))
+        canvas.blit(pygame.TEXT_FONT.render("Practice", True, (0, 0, 0)),
+                    (practice_square.left, practice_square.top))
+        canvas.blit(pygame.TEXT_FONT.render("Quit", True, (0, 0, 0)),
+                    (quit_square.left, quit_square.top))
         for event in pygame.event.get():
             current_mouse_location = pygame.mouse.get_pos()
             if event.type == pygame.QUIT: 
                 running = False
             if event.type == pygame.MOUSEBUTTONDOWN:
+                
                 start_pressed_board_position = get_board_index(
                     current_mouse_location[0], current_mouse_location[1]
                 )
+                print(start_pressed_board_position)
                 if start_pressed_board_position == 19:
                     player_vs_player(canvas)
                 elif start_pressed_board_position == 20:
@@ -205,7 +212,9 @@ if __name__ == "__main__":
     
     pygame.init()
     pygame.mixer.init()
+    pygame.font.init()
     pygame.mixer.music.load("move.mp3")
+    pygame.TEXT_FONT = pygame.font.SysFont('Arial', 20)
     pygame.PIECE_IMAGES = {}
 
     canvas_size = 512
