@@ -225,5 +225,3 @@ if __name__ == "__main__":
 
     pygame.display.set_caption("CHESS")
     draw_menu(canvas)
-
-

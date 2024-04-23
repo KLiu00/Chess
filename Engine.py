@@ -254,7 +254,7 @@ class ChessEngine:
             moves.append(move)
         return moves
 
-    def generate_pawn_moves(self, boardIndex: int):
+    def generate_pawn_moves(self, boardIndex: int, include_pawn_attacks=False):
         # Gets information of piece from the board
         hasMoved = self.board[boardIndex].hasMoved
         side = self.board[boardIndex].side
@@ -280,7 +280,7 @@ class ChessEngine:
             # Gets the move, raycast returns a list but there will only be one in this case.
             move: Move = move[0]
             # Checks if the move location is an enemy piece, if yes add to move list.
-            if move.capturedPieceMoved is not None:
+            if move.capturedPieceMoved is not None or include_pawn_attacks:
                 moves.append(move)
 
         # En passant logic
@@ -306,29 +306,20 @@ class ChessEngine:
         return moves
 
     def is_attacked(self, board_indexes: list[int], enemy_moves: list[Move] = [],  attacking_piece_board_index: list[int] = []) -> list[bool]:
-        states: list[bool] = [False]* len(board_indexes)
+        states: list[bool] = [False] * len(board_indexes)
         if len(enemy_moves) == 0:
             enemy_moves = self.generate_all_moves(
                 Side.BLACK if self.SideToPlay is Side.WHITE else Side.WHITE)
-            
+                
         for move in enemy_moves:
             if move.capturedPiecePosition in board_indexes:
-                
-        move_indexes = [move.capturedPiecePosition for move in enemy_moves]
-        move_attacker = [move.pieceMoved for move in enemy_moves]
-        move_attacker_index = [move.startPosition for move in enemy_moves]
-        move_attacker_end_index = [move.capturedPiecePosition for move in enemy_moves]
-        for i, index in enumerate(board_indexes):
-            if index in move_indexes:
-                if move_attacker[i].pieceType is PieceType.PAWN:
-                    if (abs(move_attacker_end_index[i] - move_attacker_index[i]) / 8) % 1 == 0:
-                        states.append(False)
+                if move.pieceMoved.pieceType is PieceType.PAWN:
+                    if (abs(move.capturedPiecePosition - move.startPosition) / 8) % 1 == 0:
                         continue
-                states.append(True)
-                attacking_piece_board_index.append(move_attacker_index[i])
-            else:
-                states.append(False)
+                states[board_indexes.index(move.capturedPiecePosition)] = True
+                attacking_piece_board_index.append(move.startPosition)
         return states
+
 
     def in_check(self, king_position: int = None) -> tuple[bool, int]:
         if king_position is None:
@@ -393,7 +384,7 @@ class ChessEngine:
                 moves.append(a)
         return moves
 
-    def generate_all_moves(self, side: Side) -> list[Move]:
+    def generate_all_moves(self, side: Side, include_pawn_attacks=False) -> list[Move]:
         moveGenerator = {
              PieceType.ROOK: self.generate_rook_moves,
              PieceType.BISHOP: self.generate_bishop_moves,
@@ -409,6 +400,9 @@ class ChessEngine:
                 continue
 
             if cell.side is side :
+                if include_pawn_attacks and cell.pieceType is PieceType.PAWN:
+                    moves.extend(self.generate_pawn_moves(boardIndex, True))
+                    continue
                 moves.extend(moveGenerator[cell.pieceType](boardIndex))
 
         return moves
@@ -444,6 +438,16 @@ class ChessEngine:
             first_piece_allowed_indexes.append(second_index)
             restrictions[first_index] = first_piece_allowed_indexes
 
+
+    def get_attacking_direction(self, first_position, second_position):
+        for direction in self.__VerticalMovement + self.__HorizontalMovement + self.__DiagonalMovement:
+            position_ray = self.raycast(first_position, direction, False, True)
+            if len(position_ray) == 0:
+                continue
+            if second_position == position_ray[-1].capturedPiecePosition:
+                return direction
+        raise IndexError("Attack direction not found")
+
     def generate_legal_moves(self) -> list[Move]:
         moves: list[Move] = self.generate_all_moves(self.SideToPlay)
         
@@ -460,7 +464,7 @@ class ChessEngine:
         king_piece, king_position = king
 
         enemy_moves: list[Move] = self.generate_all_moves(
-            Side.WHITE if self.SideToPlay is Side.BLACK else Side.BLACK)
+            Side.WHITE if self.SideToPlay is Side.BLACK else Side.BLACK, True)
         king_moves = self.generate_king_moves(king_position)
         for move in king_moves:
             if not self.is_attacked([move.endPosition], enemy_moves)[0]:
@@ -473,7 +477,7 @@ class ChessEngine:
             for move in enemy_moves:
                 if move.startPosition == in_check[1][0] :
                     attacked_squares.append(move)
-            print(attacked_squares)
+                    print(self.get_attacking_direction(move.startPosition, king_position))
             return validated_moves
 
         #pins
@@ -485,6 +489,8 @@ class ChessEngine:
             self.process_pins(king_position, movement, [PieceType.QUEEN, PieceType.BISHOP], restrictions)
 
         for move in moves:
+            if move.pieceMoved.pieceType is PieceType.KING:
+                continue
             if move.startPosition not in restrictions:
                 validated_moves.append(move)
             else:
