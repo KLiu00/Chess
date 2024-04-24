@@ -195,38 +195,40 @@ class ChessEngine:
         return pieces
 
     # Generates a list of indexes on the board the piece can go
-    def generate_rook_moves(self, boardIndex: int):
+    def generate_rook_moves(self, boardIndex: int, include_self_attacks:bool):
         moves = []
         for direction in self.__HorizontalMovement:
-            moves.extend(self.raycast(boardIndex, direction))
+            moves.extend(self.raycast(
+                boardIndex, direction, includeAllies=include_self_attacks))
 
         for direction in self.__VerticalMovement:
-            moves.extend(self.raycast(boardIndex, direction))
+            moves.extend(self.raycast(boardIndex, direction,
+                         includeAllies=include_self_attacks))
 
         return moves
 
-    def generate_bishop_moves(self, boardIndex: int):
+    def generate_bishop_moves(self, boardIndex: int, include_self_attacks: bool):
         moves = []
         for direction in self.__DiagonalMovement:
-            moves.extend(self.raycast(boardIndex, direction))
+            moves.extend(self.raycast(boardIndex, direction, includeAllies=include_self_attacks))
 
         return moves
 
-    def generate_queen_moves(self, boardIndex: int):
+    def generate_queen_moves(self, boardIndex: int, include_self_attacks: bool):
         moves = []
-        moves.extend(self.generate_bishop_moves(boardIndex))
-        moves.extend(self.generate_rook_moves(boardIndex))
+        moves.extend(self.generate_bishop_moves(boardIndex, include_self_attacks))
+        moves.extend(self.generate_rook_moves(boardIndex, include_self_attacks))
 
         return moves
 
-    def generate_king_moves(self, boardIndex: int):
+    def generate_king_moves(self, boardIndex: int, include_self_attacks: bool):
         moves = []
         for direction in self.__DiagonalMovement + self.__HorizontalMovement + self.__VerticalMovement:
-            moves.extend(self.raycast(boardIndex, direction, lifespan=1))
+            moves.extend(self.raycast(boardIndex, direction, includeAllies=include_self_attacks, lifespan=1))
 
         return moves
 
-    def generate_knight_moves(self, boardIndex: int):
+    def generate_knight_moves(self, boardIndex: int, include_self_attacks: bool):
         moves = []
         directions = [17, 15, 10, 6, -17, -15, -10, -6]
         currentIndexInRow = boardIndex % 8
@@ -247,14 +249,14 @@ class ChessEngine:
             nextCell = self.board[nextIndex]
             if nextCell is not None:
                 # Checks if the cell is same team
-                if nextCell.side == self.board[boardIndex].side:
+                if not include_self_attacks and nextCell.side == self.board[boardIndex].side:
                     continue
 
             move = Move(boardIndex, nextIndex, copy(self.board[boardIndex]), copy(nextCell))
             moves.append(move)
         return moves
 
-    def generate_pawn_moves(self, boardIndex: int, include_pawn_attacks=False):
+    def generate_pawn_moves(self, boardIndex: int, include_self_attacks: bool, include_pawn_attacks=False):
         # Gets information of piece from the board
         hasMoved = self.board[boardIndex].hasMoved
         side = self.board[boardIndex].side
@@ -273,7 +275,7 @@ class ChessEngine:
         for direction in takingDirections:
             # Adjust for which side the pawn is on
             direction *= sideMultiplier
-            move: list[Move] = self.raycast(boardIndex, direction, includeContact=True, lifespan=1)
+            move: list[Move] = self.raycast(boardIndex, direction, includeContact=True, includeAllies=include_self_attacks, lifespan=1)
             # Check if potential move is possible
             if len(move) == 0:
                 continue
@@ -309,7 +311,7 @@ class ChessEngine:
         states: list[bool] = [False] * len(board_indexes)
         if len(enemy_moves) == 0:
             enemy_moves = self.generate_all_moves(
-                Side.BLACK if self.SideToPlay is Side.WHITE else Side.WHITE)
+                Side.BLACK if self.SideToPlay is Side.WHITE else Side.WHITE, False, True)
                 
         for move in enemy_moves:
             if move.capturedPiecePosition in board_indexes:
@@ -384,7 +386,7 @@ class ChessEngine:
                 moves.append(a)
         return moves
 
-    def generate_all_moves(self, side: Side, include_pawn_attacks=False) -> list[Move]:
+    def generate_all_moves(self, side: Side, include_pawn_attacks=False, include_self_attacks=False) -> list[Move]:
         moveGenerator = {
              PieceType.ROOK: self.generate_rook_moves,
              PieceType.BISHOP: self.generate_bishop_moves,
@@ -401,9 +403,9 @@ class ChessEngine:
 
             if cell.side is side :
                 if include_pawn_attacks and cell.pieceType is PieceType.PAWN:
-                    moves.extend(self.generate_pawn_moves(boardIndex, True))
+                    moves.extend(self.generate_pawn_moves(boardIndex, include_self_attacks, True))
                     continue
-                moves.extend(moveGenerator[cell.pieceType](boardIndex))
+                moves.extend(moveGenerator[cell.pieceType](boardIndex, include_self_attacks))
 
         return moves
 
@@ -454,7 +456,7 @@ class ChessEngine:
         moves.extend(self.castling_moves())
 
         restrictions = {}
-        validated_moves = []
+        validated_moves: list[Move] = []
 
         kings = self.getPieces(PieceType.KING, self.SideToPlay)
         if len(kings) == 0:
@@ -464,21 +466,35 @@ class ChessEngine:
         king_piece, king_position = king
 
         enemy_moves: list[Move] = self.generate_all_moves(
-            Side.WHITE if self.SideToPlay is Side.BLACK else Side.BLACK, True)
-        king_moves = self.generate_king_moves(king_position)
+            Side.WHITE if self.SideToPlay is Side.BLACK else Side.BLACK, True, True)
+        king_moves = self.generate_king_moves(king_position, False)
         for move in king_moves:
             if not self.is_attacked([move.endPosition], enemy_moves)[0]:
                 validated_moves.append(move)
         # if in check, can only move king / a piece to block the check or take the attacking piece
         if (in_check := self.in_check())[0]:
-            
-            # Get attacked squares
-            attacked_squares = []
+
+            allowed_positions = []
             for move in enemy_moves:
                 if move.startPosition == in_check[1][0] :
-                    attacked_squares.append(move)
-                    print(self.get_attacking_direction(move.startPosition, king_position))
-            return validated_moves
+                    # gets the attack direction from the attacking piece to the king
+                    attack_direction = self.get_attacking_direction(move.startPosition, king_position)
+                    allowed_positions.append(move.startPosition)
+                    allowed_positions.extend([*range(move.startPosition, king_position, attack_direction)])
+
+                    banned_king_positions = [move.capturedPiecePosition for move in self.raycast(move.startPosition, attack_direction,includeContact=False, xray=True)]
+            for move in moves:
+                if move.pieceMoved.pieceType is PieceType.KING:
+                    continue
+                if move.capturedPiecePosition in allowed_positions:
+                    validated_moves.append(move)
+            
+            filtered_moves = []
+            for move in validated_moves:
+                if move.pieceMoved.pieceType is PieceType.KING and move.capturedPiecePosition in banned_king_positions:
+                    continue
+                filtered_moves.append(move)
+            return filtered_moves
 
         #pins
         
