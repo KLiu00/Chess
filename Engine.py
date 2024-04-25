@@ -314,11 +314,12 @@ class ChessEngine:
                         moves.append(a)
         
         # Promotion
-        if (boardIndex // 8 == 1 and self.SideToPlay is Side.WHITE) or (boardIndex // 8 == 6 and self.SideToPlay is Side.BLACK):
-            mx = PromotionMove(boardIndex, boardIndex + 8 *sideMultiplier, copy(self.board[boardIndex]), copy(Queen(self.SideToPlay)))
-            moves.append(mx)
-        else:
-            moves.extend(linear_pawn_movement)
+        if len(linear_pawn_movement) != 0:
+            if (boardIndex // 8 == 1 and self.SideToPlay is Side.WHITE) or (boardIndex // 8 == 6 and self.SideToPlay is Side.BLACK):
+                mx = PromotionMove(boardIndex, boardIndex + 8 *sideMultiplier, copy(self.board[boardIndex]), copy(Queen(self.SideToPlay)))
+                moves.append(mx)
+            else:
+                moves.extend(linear_pawn_movement)
         return moves
 
     def is_attacked(self, board_indexes: list[int], enemy_moves: list[Move] = [],  attacking_piece_board_index: list[int] = []) -> list[bool]:
@@ -429,6 +430,13 @@ class ChessEngine:
         else:
             king = king_position
         return self.is_attacked(board_indexes=[king])[0] and len(self.generate_legal_moves()) == 0
+    
+    def in_stalemate(self, king_position: int = None) -> bool:
+        if king_position is None:
+            king = self.getPieces(PieceType.KING, self.SideToPlay)[0][1]
+        else:
+            king = king_position
+        return not self.is_attacked(board_indexes=[king])[0] and len(self.generate_legal_moves()) == 0
 
     def process_pins(self, king_position, direction, piece_types, restrictions):
         piece_list = self.get_xray_piece(king_position, direction)
