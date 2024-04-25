@@ -48,16 +48,16 @@ class ChessEngine:
             King(Side.WHITE), Bishop(Side.WHITE), Knight(Side.WHITE), Rook(Side.WHITE)
         ]
 
-        # board = [
-        #     None, None, None, None, King(Side.BLACK), None, Knight(Side.BLACK), Queen(Side.WHITE),
-        #     None, None, None, None, None, None, None, None,
-        #     None, None, None, None, None, None, None, Pawn(Side.BLACK),
-        #     None, None, None, None, None, None, None, None,
-        #     None, None, None, None, None, None, None, None,
-        #     None, None, None, None, None, None, None, None,
-        #     None, None, None, None, None, None, None, None,
-        #     Rook(Side.WHITE), None, Bishop(Side.WHITE), None, King(Side.WHITE), None, None, Rook(Side.WHITE),
-        # ]
+        board = [
+            None, None, None, None, King(Side.BLACK), None, Knight(Side.BLACK), Queen(Side.WHITE),
+            None, Pawn(Side.WHITE), None, None, None, None, None, None,
+            None, None, None, None, None, None, None, Pawn(Side.BLACK),
+            None, None, None, None, None, None, None, None,
+            None, None, None, None, None, None, None, None,
+            None, None, None, None, None, None, None, None,
+            None, Pawn(Side.BLACK), None, None, None, None, None, None,
+            None, None, Bishop(Side.WHITE), None, King(Side.WHITE), None, None, Rook(Side.WHITE),
+        ]
 
         return board
 
@@ -314,8 +314,8 @@ class ChessEngine:
                         moves.append(a)
         
         # Promotion
-        if (boardIndex // 8 == 1 and self.SideToPlay is Side.WHITE) or (boardIndex // 8 == 7 and self.SideToPlay is Side.BLACK):
-            mx = PromotionMove(boardIndex, boardIndex + 8 *sideMultiplier, copy(self.board[boardIndex]), copy(Queen(Side.WHITE)))
+        if (boardIndex // 8 == 1 and self.SideToPlay is Side.WHITE) or (boardIndex // 8 == 6 and self.SideToPlay is Side.BLACK):
+            mx = PromotionMove(boardIndex, boardIndex + 8 *sideMultiplier, copy(self.board[boardIndex]), copy(Queen(self.SideToPlay)))
             moves.append(mx)
         else:
             moves.extend(linear_pawn_movement)
