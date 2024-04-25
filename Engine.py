@@ -1,7 +1,7 @@
 import random
 from Enums.SideEnum import SideEnum as Side
 from Enums.PieceEnum import PieceEnum as PieceType
-from Move import Move, CastleMove
+from Move import Move, CastleMove, PromotionMove
 from Stack import Stack
 
 from copy import copy
@@ -48,17 +48,16 @@ class ChessEngine:
             King(Side.WHITE), Bishop(Side.WHITE), Knight(Side.WHITE), Rook(Side.WHITE)
         ]
 
-        board = [
-            King(Side.BLACK), None, None, None, Rook(Side.BLACK), None, None, None,
-            None, None, None, None, Bishop(Side.BLACK), None, None, None,
-            None, None, None, None, Rook(Side.WHITE), None, None, None,
-            None, None, None, None, None, None, None, None,
-            None, None, Queen(Side.BLACK), None, None, Pawn(
-                Side.BLACK), None, None,
-            None, None, None, None, None, None, None, None,
-            None, None, None, None, None, None, None, None,
-            Rook(Side.WHITE), None, None, None, King(Side.WHITE), None, None, Rook(Side.WHITE),
-        ]
+        # board = [
+        #     None, None, None, None, King(Side.BLACK), None, Knight(Side.BLACK), Queen(Side.WHITE),
+        #     None, None, None, None, None, None, None, None,
+        #     None, None, None, None, None, None, None, Pawn(Side.BLACK),
+        #     None, None, None, None, None, None, None, None,
+        #     None, None, None, None, None, None, None, None,
+        #     None, None, None, None, None, None, None, None,
+        #     None, None, None, None, None, None, None, None,
+        #     Rook(Side.WHITE), None, Bishop(Side.WHITE), None, King(Side.WHITE), None, None, Rook(Side.WHITE),
+        # ]
 
         return board
 
@@ -99,6 +98,12 @@ class ChessEngine:
                 self.__MoveHistory.push(move)
                 self.switchSide()
                 return True
+            if isinstance(move, PromotionMove):
+                self.board[move.endPosition] = move.promoted_piece
+                move.promoted_piece.hasMoved = True
+                self.__MoveHistory.push(move)
+                self.switchSide()
+                return True
             # Add move onto the move history.
             self.__MoveHistory.push(move)
             self.board[move.endPosition].hasMoved = True
@@ -124,6 +129,10 @@ class ChessEngine:
             self.board[previousMove.rook_end_position] = None
             self.board[previousMove.rook_start_position] = previousMove.rook_piece
             previousMove.rook_piece.hasMoved = False
+
+        if isinstance(previousMove, PromotionMove):
+            self.board[previousMove.endPosition] = None
+            self.board[previousMove.startPosition] = previousMove.initial_pawn
 
         # Removes the unmade move
         self.__MoveHistory.pop()
@@ -268,7 +277,8 @@ class ChessEngine:
         # If the piece has not moved
         rayLifespan = 1 if hasMoved else 2
         # Generates linear pawn movement
-        moves.extend(self.raycast(boardIndex, sideMultiplier*movementDirection, includeContact=False, lifespan=rayLifespan))
+        linear_pawn_movement = self.raycast(boardIndex, sideMultiplier*movementDirection, includeContact=False, lifespan=rayLifespan)
+        
 
         # Taking pieces
         takingDirections = [7, 9]
@@ -304,7 +314,11 @@ class ChessEngine:
                         moves.append(a)
         
         # Promotion
-
+        if (boardIndex // 8 == 1 and self.SideToPlay is Side.WHITE) or (boardIndex // 8 == 7 and self.SideToPlay is Side.BLACK):
+            mx = PromotionMove(boardIndex, boardIndex + 8 *sideMultiplier, copy(self.board[boardIndex]), copy(Queen(Side.WHITE)))
+            moves.append(mx)
+        else:
+            moves.extend(linear_pawn_movement)
         return moves
 
     def is_attacked(self, board_indexes: list[int], enemy_moves: list[Move] = [],  attacking_piece_board_index: list[int] = []) -> list[bool]:
@@ -345,7 +359,7 @@ class ChessEngine:
         short_rook = long_rook = None
 
         # if the king has moved or in check, skip.
-        if king_piece.hasMoved or self.in_check(king_position):
+        if king_piece.hasMoved or self.in_check(king_position)[0]:
             return moves
 
         # Check if no piece in between them, Short castle
@@ -452,7 +466,6 @@ class ChessEngine:
 
     def generate_legal_moves(self) -> list[Move]:
         moves: list[Move] = self.generate_all_moves(self.SideToPlay)
-        
         moves.extend(self.castling_moves())
 
         restrictions = {}
@@ -477,12 +490,19 @@ class ChessEngine:
             allowed_positions = []
             for move in enemy_moves:
                 if move.startPosition == in_check[1][0] :
+                    
+                    if move.pieceMoved.pieceType is PieceType.KNIGHT:
+                        allowed_positions.append(move.startPosition)
+                        banned_king_positions = [move.capturedPiecePosition for move in self.generate_knight_moves(move.startPosition, True)]
+                        break
                     # gets the attack direction from the attacking piece to the king
                     attack_direction = self.get_attacking_direction(move.startPosition, king_position)
                     allowed_positions.append(move.startPosition)
                     allowed_positions.extend([*range(move.startPosition, king_position, attack_direction)])
 
                     banned_king_positions = [move.capturedPiecePosition for move in self.raycast(move.startPosition, attack_direction,includeContact=False, xray=True)]
+                    break
+            
             for move in moves:
                 if move.pieceMoved.pieceType is PieceType.KING:
                     continue
@@ -499,20 +519,21 @@ class ChessEngine:
         #pins
         
         for movement in self.__VerticalMovement + self.__HorizontalMovement:
-            self.process_pins(king_position, movement, [PieceType.QUEEN, PieceType.ROOK], restrictions)
+            self.process_pins(king_position, movement, [PieceType.QUEEN, PieceType.ROOK, PieceType.KNIGHT], restrictions)
 
         for movement in self.__DiagonalMovement:
-            self.process_pins(king_position, movement, [PieceType.QUEEN, PieceType.BISHOP], restrictions)
+            self.process_pins(king_position, movement, [PieceType.QUEEN, PieceType.BISHOP, PieceType.KNIGHT], restrictions)
 
+        
         for move in moves:
-            if move.pieceMoved.pieceType is PieceType.KING:
+            if move.pieceMoved.pieceType is PieceType.KING and not isinstance(move, CastleMove):
                 continue
             if move.startPosition not in restrictions:
                 validated_moves.append(move)
             else:
                 if move.endPosition in restrictions[move.startPosition]:
                     validated_moves.append(move)
-
+        
         return validated_moves
 
     def minmax_a_b(self, depth, maximising, alpha, beta):
@@ -548,11 +569,11 @@ class ChessEngine:
                     break
             return min_eval
 
-    def search_moves(self) -> Move:
+    def search_moves(self, moves) -> Move:
         maximising = True if self.SideToPlay is Side.WHITE else False
         current_eval = -99999 if maximising else 99999
         best_moves = []
-        moves = self.generate_legal_moves()
+        
         for move in moves:
             if move.capturedPieceMoved is None:
                 continue

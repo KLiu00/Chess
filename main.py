@@ -38,6 +38,10 @@ def draw_board(canvas, board):
             pygame.PIECE_IMAGES[str(board[i])], square
         )
 
+def checkmate_screen(canvas, winning_side: SideEnum):
+    canvas.blit(pygame.TEXT_FONT.render(f"{winning_side.name} has won.", True, (0, 0, 0)),
+                    (0,0))
+
 
 def player_vs_computer(canvas):
     exit = False
@@ -47,7 +51,8 @@ def player_vs_computer(canvas):
     while not exit:
         for event in pygame.event.get():
             if instance.SideToPlay is SideEnum.BLACK:
-                move = instance.search_moves()
+                moves = instance.generate_legal_moves()
+                move = instance.search_moves(moves)
                 instance.makeMove(move)
                 draw_board(canvas, instance.board)
                 pygame.draw.rect(canvas, (255, 0, 0), draw_square(
@@ -86,8 +91,9 @@ def player_vs_computer(canvas):
                 instance.makeMove(all_moves[rf_moves.index(toMake)])
                 draw_board(canvas, instance.board)
                 pygame.mixer.music.play()
+        instance.checkmated = instance.in_checkmate()
         if instance.checkmated:
-            exit = True
+            checkmate_screen(canvas, SideEnum.WHITE if instance.SideToPlay is SideEnum.BLACK else SideEnum.BLACK)
         pygame.display.update()
 
 def player_vs_player(canvas):
@@ -101,6 +107,8 @@ def player_vs_player(canvas):
             if event.type is pygame.QUIT:
                 exit = True
             if event.type == pygame.MOUSEBUTTONDOWN:
+                if pygame.mouse.get_pressed()[2]:
+                    instance.unmakeMove()
                 start_pressed_board_position = get_board_index(
                     current_mouse_location[0], current_mouse_location[1]
                 )
@@ -128,8 +136,10 @@ def player_vs_player(canvas):
                 instance.makeMove(all_moves[rf_moves.index(toMake)])
                 draw_board(canvas, instance.board)
                 pygame.mixer.music.play()
+        instance.checkmated = instance.in_checkmate()
         if instance.checkmated:
-            exit = True
+            checkmate_screen(canvas, SideEnum.WHITE if instance.SideToPlay is SideEnum.BLACK else SideEnum.BLACK)
+            
         pygame.display.update()
 
 def practice_mode(canvas):
@@ -156,8 +166,6 @@ def practice_mode(canvas):
                 instance.makeMove(Move(start_pressed_board_position, current_board_position, instance.board[start_pressed_board_position], instance.board[current_board_position]))
                 draw_board(canvas, instance.board)
                 pygame.mixer.music.play()
-        if instance.checkmated:
-            exit = True
         pygame.display.update()
 
 def load_images(store):
