@@ -131,7 +131,7 @@ class ChessEngine:
             previousMove.rook_piece.hasMoved = False
 
         if isinstance(previousMove, PromotionMove):
-            self.board[previousMove.endPosition] = None
+            self.board[previousMove.endPosition] = previousMove.capturedPieceMoved
             self.board[previousMove.startPosition] = previousMove.initial_pawn
 
         # Removes the unmade move
