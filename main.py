@@ -39,11 +39,25 @@ def draw_board(canvas, board):
         )
 
 def checkmate_screen(canvas, winning_side: SideEnum):
-    canvas.blit(pygame.TEXT_FONT.render(f"{winning_side.name} has won.", True, (0, 0, 0)),
-                    (0,0))
+    closed = False 
+    canvas.blit(pygame.TEXT_FONT.render(f"{winning_side.name} has won. Press X to go back to main menu", True, (0, 0, 0)),
+                (0, 0))
+    pygame.display.update()
+    while not closed:
+        for event in pygame.event.get():
+            if event.type is pygame.QUIT:
+                closed = True
 
+def stalemate_screen(canvas):
+    closed = False
+    canvas.blit(pygame.TEXT_FONT.render(f"Stalemate. Press X to go back to main menu", True, (0, 0, 0)),
+                (0, 0))
+    pygame.display.update()
+    while not closed:
+        for event in pygame.event.get():
+            if event.type is pygame.QUIT:
+                closed = True
 
-def player_vs_computer(canvas):
     exit = False
     instance = Chess()
     start_pressed_board_position = 0
