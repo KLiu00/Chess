@@ -47,18 +47,6 @@ class ChessEngine:
             Rook(Side.WHITE), Knight(Side.WHITE), Bishop(Side.WHITE), Queen(Side.WHITE),
             King(Side.WHITE), Bishop(Side.WHITE), Knight(Side.WHITE), Rook(Side.WHITE)
         ]
-
-        board = [
-            None, None, None, None, King(Side.BLACK), None, Knight(Side.BLACK), Queen(Side.WHITE),
-            None, Pawn(Side.WHITE), None, None, None, None, None, None,
-            None, None, None, None, None, None, None, Pawn(Side.BLACK),
-            None, None, None, None, None, None, None, None,
-            None, None, None, None, None, None, None, None,
-            None, None, None, None, None, None, None, None,
-            None, Pawn(Side.BLACK), None, None, None, None, None, None,
-            None, None, Bishop(Side.WHITE), None, King(Side.WHITE), None, None, Rook(Side.WHITE),
-        ]
-
         return board
 
     # Returns a list of the requested pieces and the respective index on the board
