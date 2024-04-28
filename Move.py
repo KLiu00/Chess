@@ -21,7 +21,7 @@ class CastleMove(Move):
         self.rook_end_position = rook_end_position
 
 class PromotionMove(Move):
-    def __init__(self, startPosition: int, endPosition: int, pawn_moved: IPiece, promoted_to: IPiece) -> None:
-        super().__init__(startPosition, endPosition, pawn_moved, None)
+    def __init__(self, startPosition: int, endPosition: int, pawn_moved: IPiece, promoted_to: IPiece, piece_captured: IPiece = None) -> None:
+        super().__init__(startPosition, endPosition, pawn_moved, piece_captured)
         self.initial_pawn = pawn_moved
         self.promoted_piece = promoted_to
