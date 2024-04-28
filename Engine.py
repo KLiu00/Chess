@@ -293,7 +293,12 @@ class ChessEngine:
             move: Move = move[0]
             # Checks if the move location is an enemy piece, if yes add to move list.
             if move.capturedPieceMoved is not None or include_pawn_attacks:
-                moves.append(move)
+                #checks if it is an end row
+                if (move.capturedPiecePosition // 8 == 0 and self.SideToPlay is Side.WHITE) or (move.capturedPiecePosition // 8 == 7 and self.SideToPlay is Side.BLACK):
+                    moves.append(PromotionMove(boardIndex, move.capturedPiecePosition,
+                                 copy(self.board[boardIndex]), copy(Queen(self.SideToPlay)), copy((move.capturedPieceMoved))))
+                else:
+                    moves.append(move)
 
         # En passant logic
         """
