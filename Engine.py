@@ -24,6 +24,7 @@ class ChessEngine:
         self.turnCount = 0
         self.board = []
         self.checkmated = False
+        self.stalemated = False
         self.board = self.__InitBoard()
 
         # Board movement directions in one dimensional array.
