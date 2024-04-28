@@ -571,7 +571,7 @@ class ChessEngine:
                     break
             return min_eval
 
-    def search_moves(self, moves) -> Move:
+    def search_moves(self, moves, depth) -> Move:
         maximising = True if self.SideToPlay is Side.WHITE else False
         current_eval = -99999 if maximising else 99999
         best_moves = []
@@ -583,7 +583,7 @@ class ChessEngine:
                 moves.remove(move)
         for move in moves:
             self.makeMove(move)
-            evaluation = self.minmax_a_b(2, not maximising, -99999, 99999)
+            evaluation = self.minmax_a_b(depth, not maximising, -99999, 99999)
             self.unmakeMove()
             print(evaluation)
             if maximising:
