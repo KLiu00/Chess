@@ -58,16 +58,20 @@ def stalemate_screen(canvas):
             if event.type is pygame.QUIT:
                 closed = True
 
+
+def player_vs_computer(canvas, start_side: SideEnum, depth: int):
     exit = False
     instance = Chess()
     start_pressed_board_position = 0
     draw_board(canvas, instance.board)
-    while not exit:
+    while not instance.checkmated and not instance.stalemated and not exit:
+        pygame.display.update()
         for event in pygame.event.get():
-            if instance.SideToPlay is SideEnum.BLACK:
+            if instance.SideToPlay is (SideEnum.WHITE if start_side is SideEnum.BLACK else SideEnum.BLACK):
                 moves = instance.generate_legal_moves()
-                move = instance.search_moves(moves)
+                move = instance.search_moves(moves, depth)
                 instance.makeMove(move)
+                instance.checkmated = instance.in_checkmate()
                 draw_board(canvas, instance.board)
                 pygame.draw.rect(canvas, (255, 0, 0), draw_square(
                     pixel_size, move.startPosition), 5)
@@ -103,19 +107,25 @@ def stalemate_screen(canvas):
                 if toMake not in rf_moves:
                     continue
                 instance.makeMove(all_moves[rf_moves.index(toMake)])
+                
                 draw_board(canvas, instance.board)
                 pygame.mixer.music.play()
         instance.checkmated = instance.in_checkmate()
-        if instance.checkmated:
-            checkmate_screen(canvas, SideEnum.WHITE if instance.SideToPlay is SideEnum.BLACK else SideEnum.BLACK)
-        pygame.display.update()
+        instance.stalemated = instance.in_stalemate()
+        
+    if instance.checkmated:
+        checkmate_screen(
+            canvas, SideEnum.WHITE if instance.SideToPlay is SideEnum.BLACK else SideEnum.BLACK)
+    if instance.in_stalemate():
+        stalemate_screen(canvas)
 
 def player_vs_player(canvas):
     exit = False
     instance = Chess()
     start_pressed_board_position = 0
     draw_board(canvas, instance.board)
-    while not exit:
+    while not exit and not instance.stalemated and not instance.checkmated:
+        pygame.display.update()
         for event in pygame.event.get():
             current_mouse_location = pygame.mouse.get_pos()
             if event.type is pygame.QUIT:
@@ -151,10 +161,13 @@ def player_vs_player(canvas):
                 draw_board(canvas, instance.board)
                 pygame.mixer.music.play()
         instance.checkmated = instance.in_checkmate()
-        if instance.checkmated:
-            checkmate_screen(canvas, SideEnum.WHITE if instance.SideToPlay is SideEnum.BLACK else SideEnum.BLACK)
-            
-        pygame.display.update()
+        instance.stalemated = instance.in_stalemate()
+
+    if instance.checkmated:
+        checkmate_screen(
+            canvas, SideEnum.WHITE if instance.SideToPlay is SideEnum.BLACK else SideEnum.BLACK)
+    if instance.in_stalemate():
+        stalemate_screen(canvas)
 
 def practice_mode(canvas):
     exit = False
@@ -192,42 +205,60 @@ def load_images(store):
 
 def draw_menu(canvas):
     running = True
+
+    # text colours
+    selected_colour = (0, 150, 0)
+    unselected_colour = (0, 0, 0)
+
+    selected_difficulty = 1
+    selected_play_side = SideEnum.WHITE
+
+    # options dictionary with respective actions to be performed.
+    options = {
+        19: ("PvP", lambda: player_vs_player(canvas)),
+        20: ("PvAI", lambda: player_vs_computer(canvas, selected_play_side, selected_difficulty)),
+        21: ("Practice", lambda: practice_mode(canvas)),
+        22: ("Quit", lambda: set_running(False)),
+        41: ("Easy", lambda: set_selected_difficulty(1)),
+        42: ("Medium", lambda: set_selected_difficulty(2)),
+        43: ("Hard", lambda: set_selected_difficulty(3)),
+        45: ("White", lambda: set_selected_play_side(SideEnum.WHITE)),
+        46: ("Black", lambda: set_selected_play_side(SideEnum.BLACK))
+    }
+
+    def set_running(value):
+        nonlocal running
+        running = value
+
+    def set_selected_difficulty(difficulty):
+        nonlocal selected_difficulty
+        selected_difficulty = difficulty
+
+    def set_selected_play_side(side):
+        nonlocal selected_play_side
+        selected_play_side = side
+
     while running:
-        canvas.fill((255,255,255))
-        pvp_square = pygame.draw.rect(canvas, (0, 0, 0), draw_square(
-            pixel_size, 19), 2)
-        pvai_square = pygame.draw.rect(canvas, (0, 0, 0), draw_square(
-            pixel_size, 20), 2)
-        practice_square = pygame.draw.rect(canvas, (0, 0, 0), draw_square(
-            pixel_size, 21), 2)
-        quit_square = pygame.draw.rect(canvas, (0, 0, 0), draw_square(
-            pixel_size, 22), 2)
-        canvas.blit(pygame.TEXT_FONT.render("PvP", True, (0, 0, 0)),
-                    (pvp_square.left, pvp_square.top))
-        canvas.blit(pygame.TEXT_FONT.render("PvAI", True, (0, 0, 0)),
-                    (pvai_square.left, pvai_square.top))
-        canvas.blit(pygame.TEXT_FONT.render("Practice", True, (0, 0, 0)),
-                    (practice_square.left, practice_square.top))
-        canvas.blit(pygame.TEXT_FONT.render("Quit", True, (0, 0, 0)),
-                    (quit_square.left, quit_square.top))
+        canvas.fill((255, 255, 255))
+        for key, (option_text, _) in options.items():
+            option_color = selected_colour if key == 40 + selected_difficulty or (key == 45 and selected_play_side is SideEnum.WHITE) or (
+                key == 46 and selected_play_side is SideEnum.BLACK) else unselected_colour
+            square = pygame.draw.rect(
+                canvas, (0, 0, 0), draw_square(pixel_size, key), 2)
+            canvas.blit(pygame.TEXT_FONT.render(
+                option_text, True, option_color), (square.left, square.top))
+
         for event in pygame.event.get():
-            current_mouse_location = pygame.mouse.get_pos()
-            if event.type == pygame.QUIT: 
+            if event.type == pygame.QUIT:
                 running = False
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                current_mouse_location = pygame.mouse.get_pos()
                 start_pressed_board_position = get_board_index(
                     current_mouse_location[0], current_mouse_location[1]
                 )
-                print(start_pressed_board_position)
-                if start_pressed_board_position == 19:
-                    player_vs_player(canvas)
-                elif start_pressed_board_position == 20:
-                    player_vs_computer(canvas)
-                elif start_pressed_board_position == 21:
-                    practice_mode(canvas)
-                elif start_pressed_board_position == 22:
-                    running=False
+                if start_pressed_board_position in options:
+                    options[start_pressed_board_position][1]()
+
         pygame.display.update()
 
 if __name__ == "__main__":
@@ -243,7 +274,6 @@ if __name__ == "__main__":
     pixel_size = canvas_size // 8
     canvas = pygame.display.set_mode((canvas_size, canvas_size))
     load_images(pygame.PIECE_IMAGES)
-    print(pygame.PIECE_IMAGES)
 
     pygame.display.set_caption("CHESS")
     draw_menu(canvas)
