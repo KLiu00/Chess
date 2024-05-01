@@ -40,7 +40,7 @@ def draw_board(canvas, board):
 
 def checkmate_screen(canvas, winning_side: SideEnum):
     closed = False 
-    canvas.blit(pygame.TEXT_FONT.render(f"{winning_side.name} has won. Press X to go back to main menu", True, (0, 0, 0)),
+    canvas.blit(pygame.TEXT_FONT.render(f"{winning_side.name} has won. Press X to go back to main menu", True, (150, 0, 150)),
                 (0, 0))
     pygame.display.update()
     while not closed:
@@ -50,7 +50,7 @@ def checkmate_screen(canvas, winning_side: SideEnum):
 
 def stalemate_screen(canvas):
     closed = False
-    canvas.blit(pygame.TEXT_FONT.render(f"Stalemate. Press X to go back to main menu", True, (0, 0, 0)),
+    canvas.blit(pygame.TEXT_FONT.render(f"Stalemate. Press X to go back to main menu", True, (150, 0, 150)),
                 (0, 0))
     pygame.display.update()
     while not closed:
@@ -267,7 +267,7 @@ if __name__ == "__main__":
     pygame.mixer.init()
     pygame.font.init()
     pygame.mixer.music.load("move.mp3")
-    pygame.TEXT_FONT = pygame.font.SysFont('Arial', 20)
+    pygame.TEXT_FONT = pygame.font.SysFont('Arial', 25)
     pygame.PIECE_IMAGES = {}
 
     canvas_size = 512
@@ -276,4 +276,5 @@ if __name__ == "__main__":
     load_images(pygame.PIECE_IMAGES)
 
     pygame.display.set_caption("CHESS")
+    stalemate_screen(canvas, )
     draw_menu(canvas)
